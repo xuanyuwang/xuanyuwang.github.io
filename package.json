@@ -1,0 +1,30 @@
+{
+  "name": "blog",
+  "private": true,
+  "description": "A blog",
+  "version": "0.1.0",
+  "author": "Xuanyu Wang <xuanyu.wang@outlook.com>",
+  "dependencies": {
+    "gatsby": "^2.24.67",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0"
+  },
+  "devDependencies": {
+    "gh-pages": "^3.1.0",
+    "prettier": "2.1.2"
+  },
+  "homepage": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xuanyuwang/xuanyuwang.github.io.git"
+  },
+  "scripts": {
+    "build": "gatsby build",
+    "develop": "gatsby develop",
+    "deploy": "gatsby build --prefix-paths && node publish-github.js",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "start": "npm run develop",
+    "serve": "gatsby serve",
+    "clean": "gatsby clean"
+  }
+}
