@@ -1,0 +1,1 @@
+{"version":3,"sources":["webpack:///./src/pages/index.js"],"names":["HomePage"],"mappings":"2FAAA,gCAOeA,UAJE,WACf,OAAO","file":"component---src-pages-index-js-3882a388df66d55be9c4.js","sourcesContent":["import React from \"react\"\n\n\nconst HomePage = () => {\n  return <div>Hello, it's me.</div>\n};\n\nexport default HomePage;"],"sourceRoot":""}
