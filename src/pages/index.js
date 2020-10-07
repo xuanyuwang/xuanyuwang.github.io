@@ -1,8 +1,9 @@
 import React from "react"
+import HomePage from '../components/HomePage/HomePage';
 
 
-const HomePage = () => {
-  return <div>Hello, it's me.</div>
+const Index = () => {
+  return <HomePage/>;
 };
 
-export default HomePage;
+export default Index;
