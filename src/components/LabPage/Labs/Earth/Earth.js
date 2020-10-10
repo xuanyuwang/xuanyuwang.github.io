@@ -1,24 +1,44 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as d3 from 'd3/dist/d3';
 import * as topojson from 'topojson-client';
 import EarthDataJSON from './land-110m.json';
 
 const homeCoords = [-75.695, 45.424722];
+const initAngles = [102, -40, 0];
 const Earth = () => {
+	const [angles, setAngles] = useState(initAngles);
+	const [startPoint, setStartPoint] = useState({x: 0, y: 0});
 	useEffect(() => {
 		// clean the container
-		const root = document.getElementById('map');
-		const land = d3.select(root).select('svg g.land');
+		const rootNode = document.getElementById('map');
+		const root = d3.select(rootNode);
+		const land = root.select('svg g.land');
 		land.html('');
-		const home = d3.select(root).select('svg g.home');
+		const home = root.select('svg g.home');
 		home.html('');
+
+		// set up event listeners
+		const drag = d3.drag();
+		root.call(drag.on('start', (event, d) => {
+			setStartPoint({x: event.x, y: event.y});
+		}));
+		root.call(drag.on('drag', (event, d) => {
+			const {x, y} = event;
+			const dx = x - startPoint.x;
+			const dy = y - startPoint.y;
+			const dYaw = dx / 100; // every 5 pixel is 1 angle
+			const dPitch = - dy / 100; // every 5 picel is 1 angle
+			setAngles((prevAngles) => {
+				return [prevAngles[0] + dYaw, prevAngles[1], prevAngles[2] + dPitch];
+			});
+		}));
 
 		const landJSON = topojson.feature(EarthDataJSON, EarthDataJSON.objects.land);
 
 		const projection = d3.geoOrthographic();
 		const geoGenerator = d3.geoPath().projection(projection);
 
-		projection.rotate([102, -40, 0])
+		projection.rotate(angles)
 			.fitSize([100, 100], landJSON);
 
 		// land
