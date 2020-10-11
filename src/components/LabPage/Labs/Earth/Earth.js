@@ -5,6 +5,7 @@ import EarthDataJSON from './land-110m.json';
 
 const homeCoords = [-75.695, 45.424722];
 const initAngles = [102, -40, 0];
+const landJSON = topojson.feature(EarthDataJSON, EarthDataJSON.objects.land);
 const Earth = () => {
 	const [angles, setAngles] = useState(initAngles);
 	const [startPoint, setStartPoint] = useState({x: 0, y: 0});
@@ -33,13 +34,10 @@ const Earth = () => {
 			});
 		}));
 
-		const landJSON = topojson.feature(EarthDataJSON, EarthDataJSON.objects.land);
-
 		const projection = d3.geoOrthographic();
 		const geoGenerator = d3.geoPath().projection(projection);
 
-		projection.rotate(angles)
-			.fitSize([100, 100], landJSON);
+		projection.rotate(angles);
 
 		// land
 		land.selectAll('path')
@@ -61,9 +59,14 @@ const Earth = () => {
 			.attr('fill', 'none')
 			.merge(home)
 			.attr('d', geoGenerator);
+		
+		const svgNode = rootNode.firstChild;
+		const bbox = svgNode.getBBox();
+		svgNode.setAttribute('width', bbox.width + 2 * bbox.x);
+		svgNode.setAttribute('height', bbox.height + 2 * bbox.y);
 	});
 	return <div id='map'>
-		<svg viewBox='0 0 100 100'>
+		<svg>
 			<g className='land'></g>
 			<g className='home'></g>
 		</svg>
