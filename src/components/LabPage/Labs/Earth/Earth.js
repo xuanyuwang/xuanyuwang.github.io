@@ -8,7 +8,6 @@ const initAngles = [102, -40, 0];
 const landJSON = topojson.feature(EarthDataJSON, EarthDataJSON.objects.land);
 const Earth = () => {
 	const [angles, setAngles] = useState(initAngles);
-	const [startPoint, setStartPoint] = useState({x: 0, y: 0});
 	useEffect(() => {
 		// clean the container
 		const rootNode = document.getElementById('map');
@@ -18,26 +17,26 @@ const Earth = () => {
 		const home = root.select('svg g.home');
 		home.html('');
 
+		const projection = d3.geoOrthographic();
+		const geoGenerator = d3.geoPath().projection(projection);
+		projection.rotate(angles);
+
 		// set up event listeners
+		let startPoint;
 		const drag = d3.drag();
 		root.call(drag.on('start', (event, d) => {
-			setStartPoint({x: event.x, y: event.y});
+			startPoint = [event.x, event.y];
 		}));
 		root.call(drag.on('drag', (event, d) => {
 			const {x, y} = event;
-			const dx = x - startPoint.x;
-			const dy = y - startPoint.y;
-			const dYaw = dx / 100; // every 5 pixel is 1 angle
-			const dPitch = - dy / 100; // every 5 picel is 1 angle
+			const dx = x - startPoint[0];
+			const dy = y - startPoint[1];
+			const dYaw = dx / 100;
+			const dPitch = - dy / 100;
 			setAngles((prevAngles) => {
-				return [prevAngles[0] + dYaw, prevAngles[1], prevAngles[2] + dPitch];
+				return [prevAngles[0] + dYaw, prevAngles[1] + dPitch, prevAngles[2]];
 			});
 		}));
-
-		const projection = d3.geoOrthographic();
-		const geoGenerator = d3.geoPath().projection(projection);
-
-		projection.rotate(angles);
 
 		// land
 		land.selectAll('path')
