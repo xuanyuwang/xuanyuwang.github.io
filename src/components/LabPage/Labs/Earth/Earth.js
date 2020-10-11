@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as d3 from 'd3/dist/d3';
 import * as topojson from 'topojson-client';
+import * as versor from 'versor';
 import EarthDataJSON from './land-110m.json';
 
 const homeCoords = [-75.695, 45.424722];
@@ -29,13 +30,15 @@ const Earth = () => {
 		}));
 		root.call(drag.on('drag', (event, d) => {
 			const {x, y} = event;
-			const dx = x - startPoint[0];
-			const dy = y - startPoint[1];
-			const dYaw = dx / 100;
-			const dPitch = - dy / 100;
-			setAngles((prevAngles) => {
-				return [prevAngles[0] + dYaw, prevAngles[1] + dPitch, prevAngles[2]];
-			});
+			const ll_start = projection.invert(startPoint);
+			const ll_end = projection.invert([x, y]);
+			const c_start = versor.cartesian(ll_start);
+			const c_end = versor.cartesian(ll_end);
+			const deltaQuaternion = versor.delta(c_start, c_end);
+			const currentQuaternion = versor(projection.rotate());
+			const finalQuaternion = versor.multiply(currentQuaternion, deltaQuaternion);
+			const finalAngle = versor.rotation(finalQuaternion);
+			setAngles(finalAngle);
 		}));
 
 		// land
@@ -48,7 +51,7 @@ const Earth = () => {
 
 		home.selectAll('path')
 			.data([homeCoords].map((d) => {
-				const geoCircle = d3.geoCircle().radius(5).precision(1);
+				const geoCircle = d3.geoCircle().radius(2).precision(1);
 				geoCircle.center(d);
 				return geoCircle();
 			}))
