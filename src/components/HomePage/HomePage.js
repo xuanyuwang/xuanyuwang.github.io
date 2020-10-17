@@ -2,10 +2,9 @@ import React from 'react';
 import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
-import SvgIcon from '@material-ui/core/SvgIcon';
 import PageHelmet from '../PageHelmet/PageHelmet';
 
-import ToolBox from '../../resources/icons/tool-box.svg';
+import LabIcon from '../../resources/icons/lab.svg';
 
 const Title = () => {
 	return <Container maxWidth={false} style={{
@@ -17,15 +16,20 @@ const Title = () => {
 	</Container>
 };
 const NavigationButtons = () => {
-	return <Container maxWidth={false}>
-		<IconButton>
-
+	return <Container maxWidth={false} style={{
+		display: 'flex',
+		margin: '32px'
+	}}>
+		<IconButton size='medium' style={{
+			margin: 'auto'
+		}}>
+			<img src={LabIcon} width='64px'/>
 		</IconButton>
 	</Container>;
 };
 const Credit = () => {
 	return <div style={{ position: 'fixed', top: '100%', left: '50%', transform: 'translate(-50%, -100%)'}}>
-		Icons made by <a href="https://www.flaticon.com/authors/srip" title="srip">srip</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
+		Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a>
 	</div>;
 };
 const Content = () => {
