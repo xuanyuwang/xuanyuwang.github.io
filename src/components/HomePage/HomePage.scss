@@ -1,0 +1,12 @@
+@keyframes shakeLeftToRight {
+	from {
+		transform: rotate(-20deg);
+	}
+	to {
+		transform: rotate(40deg);
+	}
+}
+
+#nav-lab-button {
+	animation: 0.2s cubic-bezier(.12,1.07,.88,.78) infinite alternate shakeLeftToRight;
+}
