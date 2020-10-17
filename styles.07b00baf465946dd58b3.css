@@ -1,0 +1,1 @@
+@keyframes shakeLeftToRight{0%{transform:rotate(-20deg)}to{transform:rotate(40deg)}}#nav-lab-button{animation:shakeLeftToRight .2s cubic-bezier(.12,1.07,.88,.78) infinite alternate}
