@@ -5,6 +5,7 @@ import IconButton from '@material-ui/core/IconButton';
 import PageHelmet from '../PageHelmet/PageHelmet';
 
 import LabIcon from '../../resources/icons/lab.svg';
+import './HomePage.scss';
 
 const Title = () => {
 	return <Container maxWidth={false} style={{
@@ -23,7 +24,7 @@ const NavigationButtons = () => {
 		<IconButton size='medium' style={{
 			margin: 'auto'
 		}}>
-			<img src={LabIcon} width='64px'/>
+			<img id='nav-lab-button' src={LabIcon} width='64px'/>
 		</IconButton>
 	</Container>;
 };
