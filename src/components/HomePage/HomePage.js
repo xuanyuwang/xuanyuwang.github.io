@@ -21,7 +21,7 @@ const NavigationButtons = () => {
 		display: 'flex',
 		margin: '32px'
 	}}>
-		<IconButton size='medium' style={{
+		<IconButton size='medium' href='/labs' style={{
 			margin: 'auto'
 		}}>
 			<img id='nav-lab-button' src={LabIcon} width='64px'/>
