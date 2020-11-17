@@ -1,0 +1,52 @@
+{
+	"Main" : {
+	  "name" : {
+		"type" : "Text",
+		"config" : {
+		  "label" : "name"
+		}
+	  },
+	  "date" : {
+		"type" : "Timestamp",
+		"config" : {
+		  "label" : "date"
+		}
+	  },
+	  "thumbnail" : {
+		"type" : "Image",
+		"config" : {
+		  "constraint" : { },
+		  "thumbnails" : [ ],
+		  "label" : "thumbnail"
+		}
+	  },
+	  "article" : {
+		"type" : "Text",
+		"config" : {
+		  "label" : "article"
+		}
+	  },
+	  "tags" : {
+		"type" : "Group",
+		"config" : {
+		  "fields" : {
+			"tag" : {
+			  "type" : "Link",
+			  "config" : {
+				"select" : "document",
+				"customtypes" : [ "tag" ],
+				"label" : "tag"
+			  }
+			}
+		  },
+		  "label" : "tags"
+		}
+	  },
+	  "path" : {
+		"type" : "Text",
+		"config" : {
+		  "label" : "path"
+		}
+	  }
+	}
+  }
