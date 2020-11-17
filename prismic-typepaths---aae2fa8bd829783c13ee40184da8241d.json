@@ -1,0 +1,1 @@
+[{"path":["lab","alternate_languages"],"type":"AlternateLanguages"},{"path":["lab","data"],"type":"PrismicLabDataType"},{"path":["lab","data","name"],"type":"String"},{"path":["lab","data","date"],"type":"Date"},{"path":["lab","data","thumbnail"],"type":"PrismicImageType"},{"path":["lab","data","article"],"type":"String"},{"path":["lab"],"type":"PrismicLab"}]
