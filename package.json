@@ -21,6 +21,9 @@
     "versor": "^0.1.2"
   },
   "devDependencies": {
+    "eslint": "^7.14.0",
+    "eslint-plugin-react": "^7.21.5",
+    "eslint-plugin-react-hooks": "^4.2.0",
     "gh-pages": "^3.1.0"
   },
   "homepage": "",
