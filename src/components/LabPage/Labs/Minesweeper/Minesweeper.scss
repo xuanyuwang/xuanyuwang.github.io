@@ -19,6 +19,10 @@
 					}
 				}
 			}
+
+			.game-status {
+				text-align: center;
+			}
 		}
 
 		.board {
@@ -28,10 +32,16 @@
 				align-items: center;
 				justify-content: center;
 				&.even {
-					background-color: deepskyblue;
+					background-color: #90d5ce;
+					&.touched {
+						background-color: #dccea3;
+					}
 				}
 				&.odd {
-					background-color: palegreen;
+					background-color: #c8eae7;
+					&.touched {
+						background-color: #dccea3;
+					}
 				}
 			}
 		}

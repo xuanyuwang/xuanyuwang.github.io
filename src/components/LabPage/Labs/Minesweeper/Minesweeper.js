@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Container from '@material-ui/core/Container';
+import Tooltip from '@material-ui/core/Tooltip';
 
 import './Minesweeper.scss';
 
@@ -42,8 +43,12 @@ const CELL_STATUS = {
 	UNCOVERED: 'uncovered'
 };
 
+const ACTIONS = {
+	LEFT_CLICK: 'left-click',
+	RIGHT_CLICK: 'right-click'
+};
 function locateMines(size) {
-	const {row, col, mines } = size;
+	const { row, col, mines } = size;
 	const mineIndices = [];
 	let cellIndices = [];
 	for (let i = 0; i < row * col; i++) {
@@ -58,10 +63,14 @@ function locateMines(size) {
 	return mineIndices;
 };
 
-const useCellNumbers = (mineIndices, boardRow, boardCol) => {
+const useCellsInfo = (mineIndices, boardRow, boardCol) => {
 	const mineCount = [];
 	for (let i = 0; i < boardRow * boardCol; i++) {
-		mineCount.push(0);
+		mineCount.push({
+			surrondingMines: 0,
+			displayValue: '',
+			status: CELL_STATUS.COVERED
+		});
 	}
 	mineIndices.forEach((mineIndex) => {
 		const { row: mineRow, col: mineCol } = mineIndex;
@@ -82,13 +91,13 @@ const useCellNumbers = (mineIndices, boardRow, boardCol) => {
 				neighbor[1] < boardCol
 			) {
 				const neighborIndex = neighbor[0] * boardCol + neighbor[1];
-				mineCount[neighborIndex] += 1;
+				mineCount[neighborIndex].surrondingMines += 1;
 			}
 		});
 	});
 	mineIndices.forEach((mineIndex) => {
 		const { row: mineRow, col: mineCol } = mineIndex;
-		mineCount[mineRow * boardCol + mineCol] = -1;
+		mineCount[mineRow * boardCol + mineCol].surrondingMines = -1;
 	})
 
 	return mineCount;
@@ -111,107 +120,160 @@ const Cell = (props) => {
 	const {
 		row,
 		col,
-		number,
+		value,
+		isMine,
 		cellSize,
-		setMarkedMines,
-		setRemainCells,
-		setStepOnMine
+		status,
+		onAction
 	} = props;
-	const isMine = number === -1;
-	const [cellStatus, setCellStatus] = useState(CELL_STATUS.COVERED);
-	const className = `cell ${(row + col) % 2 === 0 ? 'odd' : 'even'}`;
-	let displayValue = '';
-	if (cellStatus === CELL_STATUS.FLAGGED) {
-		displayValue = 'F';
-	} else if (cellStatus === CELL_STATUS.UNCOVERED) {
-		if (isMine) {
-			displayValue = 'b';
-		} else {
-			displayValue = number;
-		}
-	}
-	return <div
-		key={`${row} ${col}`}
-		className={className}
-		style={{
-			gridColumn: col + 1,
-			gridRow: row + 1,
-			width: `${cellSize}px`,
-			height: `${cellSize}px`
-		}}
-		onClick={(event) => {
-			event.preventDefault();
-			setCellStatus(CELL_STATUS.UNCOVERED);
-			setRemainCells((number) => {
-				return number - 1
-			});
-			if (isMine) {
-				setStepOnMine(true);
-			}
-		}}
-		onContextMenu={(event) => {
-			event.preventDefault();
-			if (cellStatus === CELL_STATUS.COVERED) {
-				setCellStatus(CELL_STATUS.FLAGGED);
-				if (isMine) {
-					setMarkedMines((number) => {
-						return number + 1;
-					});
-				}
-			} else if (cellStatus === CELL_STATUS.FLAGGED) {
-				setCellStatus(CELL_STATUS.COVERED);
-			}
-		}}
-	>
-		<div>
-			{displayValue}
+	let className = `cell ${(row + col) % 2 === 0 ? 'odd' : 'even'}`;
+	className += status === CELL_STATUS.COVERED ? '' : ' touched';
+	return <Tooltip title={isMine ? 'true' : 'false'} key={`${row} ${col}`}>
+		<div
+			row={row + 1}
+			col={col + 1}
+			ismine={isMine ? 'true' : 'false'}
+			key={`${row} ${col}`}
+			className={className}
+			style={{
+				gridColumn: col + 1,
+				gridRow: row + 1,
+				width: `${cellSize}px`,
+				height: `${cellSize}px`
+			}}
+			onClick={(event) => {
+				event.preventDefault();
+				onAction(row, col, ACTIONS.LEFT_CLICK);
+			}}
+			onContextMenu={(event) => {
+				event.preventDefault();
+				onAction(row, col, ACTIONS.RIGHT_CLICK);
+			}}
+		>
+			<div>
+				{value}
+			</div>
 		</div>
-	</div>;
+	</Tooltip>;
 };
 const Board = (props) => {
-	const { size, setGameStatus } = props;
-	const {row, col, mines } = size;
+	const { size, gameStatus, setGameStatus } = props;
+	const { row, col, mines } = size;
 
 	const [mineIndices] = useState(locateMines(size));
-	const cellNumbers = useCellNumbers(mineIndices, row, col);
+	// { surrondingMines, displayValue, status }
+	const [cellsInfo, setCellsInfo] = useState(useCellsInfo(mineIndices, row, col));
 
 	const [markedMines, setMarkedMines] = useState(0);
 	const [remainCells, setRemainCells] = useState(row * col);
 	const [stepOnMine, setStepOnMine] = useState(false);
 
 	useEffect(() => {
-		if(remainCells < row * col && !stepOnMine){
-			setGameStatus(GAME_STATUS.PLAYING);
-		}else if(stepOnMine){
-			setGameStatus(GAME_STATUS.FAIL);
-		}else if(markedMines === mines && remainCells === 0 ){
-			setGameStatus(GAME_STATUS.WIN);
+		if (stepOnMine){
+			if (gameStatus !== GAME_STATUS.FAIL){
+				setGameStatus(GAME_STATUS.FAIL);
+			}
+		} else if (markedMines === mines && remainCells === 0) {
+			if (gameStatus !== GAME_STATUS.WIN) {
+				setGameStatus(GAME_STATUS.WIN);
+			}
+		}else if (remainCells < row * col && !stepOnMine) {
+			if (gameStatus !== GAME_STATUS.PLAYING) {
+				setGameStatus(GAME_STATUS.PLAYING);
+			}
+		}else{
+			if (gameStatus !== GAME_STATUS.INIT){
+				setGameStatus(GAME_STATUS.INIT);
+			}
 		}
 	});
+
+	const onAction = (cellRow, cellCol, action) => {
+		if (gameStatus === GAME_STATUS.FAIL || gameStatus === GAME_STATUS.WIN){
+			return;
+		}
+		const cellOrder = cellRow * row + cellCol;
+		const cellInfo = cellsInfo[cellOrder];
+		if (action === ACTIONS.LEFT_CLICK){
+			if (cellInfo.status === CELL_STATUS.COVERED){
+				const newCellInfo = {};
+				if (cellInfo.surrondingMines === -1){
+					newCellInfo.displayValue = 'm';
+				}else{
+					if (cellInfo.surrondingMines === 0){
+						cellInfo.displayValue = '';
+					}else{
+						cellInfo.displayValue = cellInfo.surrondingMines;
+					}
+				}
+				newCellInfo.status = CELL_STATUS.UNCOVERED;
+
+				setCellsInfo(() => {
+					Object.assign(cellsInfo[cellOrder], newCellInfo);
+					return cellsInfo;
+				});
+
+				setRemainCells(() => {
+					return remainCells - 1;
+				});
+				
+				if (newCellInfo.displayValue === 'm'){
+					setStepOnMine(true);
+				}
+			}
+		} else if (action === ACTIONS.RIGHT_CLICK){
+			if (cellInfo.status === CELL_STATUS.COVERED){
+				const newCellInfo = {};
+				newCellInfo.displayValue = 'f';
+				newCellInfo.status = CELL_STATUS.FLAGGED;
+
+				setCellsInfo(() => {
+					Object.assign(cellsInfo[cellOrder], newCellInfo);
+					return cellsInfo;
+				});
+
+				setRemainCells(() => {
+					return remainCells - 1;
+				});
+
+				if (cellInfo.surrondingMines === -1){
+					setMarkedMines(() => {
+						return markedMines - 1;
+					});
+				}
+			}
+		}
+	};
 
 	const cells = [];
 	const cellSize = 32;
 	for (let i = 0; i < row; i++) {
 		for (let j = 0; j < col; j++) {
+			const cellInfo = cellsInfo[i * row + j];
 			cells.push(Cell({
 				row: i,
 				col: j,
-				number: cellNumbers[i * row + j],
+				value: cellInfo.displayValue,
+				isMine: cellInfo.surrondingMines === -1,
 				cellSize,
-				setMarkedMines,
-				setRemainCells,
-				setStepOnMine
+				status: cellInfo.status,
+				onAction
 			}));
 		}
 	}
-	return <Container className='board' style={{
-		width: `${col * cellSize}px`,
-		height: `${row * cellSize}px`,
-		gridTemplateColumns: `repeat(${col}, ${cellSize}px)`,
-		gridTemplateRows: `repeat(${row} ${cellSize}px)`
-	}}>
-		{cells}
-	</Container>;
+	return <div>
+		<Container className='board' style={{
+			width: `${col * cellSize}px`,
+			height: `${row * cellSize}px`,
+			gridTemplateColumns: `repeat(${col}, ${cellSize}px)`,
+			gridTemplateRows: `repeat(${row} ${cellSize}px)`
+		}}>
+			{cells}
+		</Container>
+		{/* <div>{
+			`remain cells: ${remainCells}, marked mines: ${markedMines}`
+		}</div> */}
+	</div>;
 };
 const Game = () => {
 	const [size, setSize] = useState(getBoardSpec());
@@ -220,7 +282,7 @@ const Game = () => {
 		className='game'
 	>
 		{StatusBar({ gameStatus })}
-		{Board({ size, setGameStatus })}
+		{Board({ size, gameStatus, setGameStatus })}
 	</Container>;
 };
 const MineSweeper = () => {
