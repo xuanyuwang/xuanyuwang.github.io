@@ -128,33 +128,35 @@ const Cell = (props) => {
 	} = props;
 	let className = `cell ${(row + col) % 2 === 0 ? 'odd' : 'even'}`;
 	className += status === CELL_STATUS.COVERED ? '' : ' touched';
-	return <Tooltip title={isMine ? 'true' : 'false'} key={`${row} ${col}`}>
-		<div
-			row={row + 1}
-			col={col + 1}
-			ismine={isMine ? 'true' : 'false'}
-			key={`${row} ${col}`}
-			className={className}
-			style={{
-				gridColumn: col + 1,
-				gridRow: row + 1,
-				width: `${cellSize}px`,
-				height: `${cellSize}px`
-			}}
-			onClick={(event) => {
-				event.preventDefault();
-				onAction(row, col, ACTIONS.LEFT_CLICK);
-			}}
-			onContextMenu={(event) => {
-				event.preventDefault();
-				onAction(row, col, ACTIONS.RIGHT_CLICK);
-			}}
-		>
-			<div>
-				{value}
-			</div>
+	const cell = <div
+		row={row + 1}
+		col={col + 1}
+		ismine={isMine ? 'true' : 'false'}
+		key={`${row} ${col}`}
+		className={className}
+		style={{
+			gridColumn: col + 1,
+			gridRow: row + 1,
+			width: `${cellSize}px`,
+			height: `${cellSize}px`
+		}}
+		onClick={(event) => {
+			event.preventDefault();
+			onAction(row, col, ACTIONS.LEFT_CLICK);
+		}}
+		onContextMenu={(event) => {
+			event.preventDefault();
+			onAction(row, col, ACTIONS.RIGHT_CLICK);
+		}}
+	>
+		<div>
+			{value}
 		</div>
-	</Tooltip>;
+	</div>;
+	return <div>{cell}</div>;
+	// return <Tooltip title={isMine ? 'true' : 'false'} key={`${row} ${col}`}>
+	// 	{cell}
+	// </Tooltip>;
 };
 const Board = (props) => {
 	const { size, gameStatus, setGameStatus } = props;
@@ -169,40 +171,40 @@ const Board = (props) => {
 	const [stepOnMine, setStepOnMine] = useState(false);
 
 	useEffect(() => {
-		if (stepOnMine){
-			if (gameStatus !== GAME_STATUS.FAIL){
+		if (stepOnMine) {
+			if (gameStatus !== GAME_STATUS.FAIL) {
 				setGameStatus(GAME_STATUS.FAIL);
 			}
 		} else if (markedMines === mines && remainCells === 0) {
 			if (gameStatus !== GAME_STATUS.WIN) {
 				setGameStatus(GAME_STATUS.WIN);
 			}
-		}else if (remainCells < row * col && !stepOnMine) {
+		} else if (remainCells < row * col && !stepOnMine) {
 			if (gameStatus !== GAME_STATUS.PLAYING) {
 				setGameStatus(GAME_STATUS.PLAYING);
 			}
-		}else{
-			if (gameStatus !== GAME_STATUS.INIT){
+		} else {
+			if (gameStatus !== GAME_STATUS.INIT) {
 				setGameStatus(GAME_STATUS.INIT);
 			}
 		}
 	});
 
 	const onAction = (cellRow, cellCol, action) => {
-		if (gameStatus === GAME_STATUS.FAIL || gameStatus === GAME_STATUS.WIN){
+		if (gameStatus === GAME_STATUS.FAIL || gameStatus === GAME_STATUS.WIN) {
 			return;
 		}
 		const cellOrder = cellRow * row + cellCol;
 		const cellInfo = cellsInfo[cellOrder];
-		if (action === ACTIONS.LEFT_CLICK){
-			if (cellInfo.status === CELL_STATUS.COVERED){
+		if (action === ACTIONS.LEFT_CLICK) {
+			if (cellInfo.status === CELL_STATUS.COVERED) {
 				const newCellInfo = {};
-				if (cellInfo.surrondingMines === -1){
+				if (cellInfo.surrondingMines === -1) {
 					newCellInfo.displayValue = 'm';
-				}else{
-					if (cellInfo.surrondingMines === 0){
+				} else {
+					if (cellInfo.surrondingMines === 0) {
 						cellInfo.displayValue = '';
-					}else{
+					} else {
 						cellInfo.displayValue = cellInfo.surrondingMines;
 					}
 				}
@@ -216,13 +218,13 @@ const Board = (props) => {
 				setRemainCells(() => {
 					return remainCells - 1;
 				});
-				
-				if (newCellInfo.displayValue === 'm'){
+
+				if (newCellInfo.displayValue === 'm') {
 					setStepOnMine(true);
 				}
 			}
-		} else if (action === ACTIONS.RIGHT_CLICK){
-			if (cellInfo.status === CELL_STATUS.COVERED){
+		} else if (action === ACTIONS.RIGHT_CLICK) {
+			if (cellInfo.status === CELL_STATUS.COVERED) {
 				const newCellInfo = {};
 				newCellInfo.displayValue = 'f';
 				newCellInfo.status = CELL_STATUS.FLAGGED;
@@ -236,7 +238,7 @@ const Board = (props) => {
 					return remainCells - 1;
 				});
 
-				if (cellInfo.surrondingMines === -1){
+				if (cellInfo.surrondingMines === -1) {
 					setMarkedMines(() => {
 						return markedMines - 1;
 					});
