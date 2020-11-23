@@ -1,47 +1,45 @@
 .minesweeper {
-	.game {
-		display: flex;
-		flex-direction: column;
-		.status-bar {
-			display: grid;
-			grid-template-columns: repeat(3, 1fr);
+	display: flex;
+	flex-direction: column;
+	.status-bar {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
 
-			.flag {
+		.flag {
+			display: flex;
+			.flag-content {
 				display: flex;
-				.flag-content {
-					display: flex;
-					align-items: flex-start;
+				align-items: flex-start;
 
-					div {
-						width: unset;
-						padding: 0;
-						margin: 0;
-					}
+				div {
+					width: unset;
+					padding: 0;
+					margin: 0;
 				}
-			}
-
-			.game-status {
-				text-align: center;
 			}
 		}
 
-		.board {
-			display: grid;
-			.cell {
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				&.even {
-					background-color: #90d5ce;
-					&.touched {
-						background-color: #dccea3;
-					}
+		.game-status {
+			text-align: center;
+		}
+	}
+
+	.board {
+		display: grid;
+		.cell {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			&.even {
+				background-color: #90d5ce;
+				&.touched {
+					background-color: #dccea3;
 				}
-				&.odd {
-					background-color: #c8eae7;
-					&.touched {
-						background-color: #dccea3;
-					}
+			}
+			&.odd {
+				background-color: #c8eae7;
+				&.touched {
+					background-color: #dccea3;
 				}
 			}
 		}
