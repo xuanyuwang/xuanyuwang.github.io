@@ -4,9 +4,22 @@ import Tooltip from '@material-ui/core/Tooltip';
 
 import { connect, Provider } from 'react-redux';
 import MineSweeperStore from './Minesweeper-redux';
-import { CELL_STATUS, RevealCell, FlagCell } from './Minesweeper-redux';
+import { CELL_STATUS, RevealCell, FlagCell, MINE, FLAG } from './Minesweeper-redux';
 
 import './Minesweeper.scss';
+
+const CELL_DISPLAY_VALUE = {
+	1: '1️⃣',
+	2: '2️⃣',
+	3: '3️⃣',
+	4: '4️⃣',
+	5: '5️⃣',
+	6: '6️⃣',
+	7: '7️⃣',
+	8: '8️⃣'
+};
+CELL_DISPLAY_VALUE[MINE] = '💣';
+CELL_DISPLAY_VALUE[FLAG] = '🚩';
 
 const ConnectedStatusBar = ({ GameStatus }) => {
 	return <Container className='status-bar'>
@@ -37,7 +50,7 @@ const Cell = (props) => {
 		cellRow: row,
 		cellCol: col,
 		status,
-		displayValue: value
+		displayValue
 	} = cell;
 	let className = `cell ${(row + col) % 2 === 0 ? 'odd' : 'even'}`;
 	className += status === CELL_STATUS.COVERED ? '' : ' touched';
@@ -64,7 +77,7 @@ const Cell = (props) => {
 		}}
 	>
 		<div>
-			{value}
+			{CELL_DISPLAY_VALUE[displayValue]}
 		</div>
 	</div>;
 	return <div>{element}</div>;

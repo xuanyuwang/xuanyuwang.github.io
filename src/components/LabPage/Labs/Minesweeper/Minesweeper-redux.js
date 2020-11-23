@@ -1,6 +1,8 @@
 import { createStore } from 'redux';
 
-// Constants
+// constants
+const MINE = 'mine';
+const FLAG = 'flag';
 
 const BOARD_SIZES = {
 	SMALL: 'small',
@@ -36,7 +38,7 @@ const CELL_STATUS = {
 	UNCOVERED: 'uncovered'
 };
 
-// Initial states
+// initial states
 /**
  * state = {
  * 	BoardRow,
@@ -128,7 +130,7 @@ const buildInitialState = () => {
 };
 const INIT_STATE = buildInitialState();
 
-// Actions
+// actions
 const ACTIONS = {
 	REVEAL_CELL: 'REVEAL_CELL',
 	FLAG_CELL: 'FLAG_CELL',
@@ -163,13 +165,14 @@ const Expand = (cell) => {
 	};
 };
 
-// reducer
-// reducer helpers
+/*
+ * reducer
+ * reducer helpers
+ */
 const updateGameStatus = (state) => {
 	const { Cells } = state;
 	let flagged = 0;
 	let covered = 0;
-	let uncovered = 0;
 	let foundMines = 0;
 	let stepOnMine = false;
 	Cells.forEach((cell) => {
@@ -181,7 +184,6 @@ const updateGameStatus = (state) => {
 		} else if (cell.status === CELL_STATUS.COVERED) {
 			covered += 1;
 		} else if (cell.status === CELL_STATUS.UNCOVERED) {
-			uncovered += 1;
 			if (cell.surroundingMines === -1) {
 				stepOnMine = true;
 			}
@@ -189,8 +191,7 @@ const updateGameStatus = (state) => {
 	});
 	if (stepOnMine) {
 		state.GameStatus = GAME_STATUS.FAIL;
-	} else {
-		if (covered === 0) {
+	} else if (covered === 0) {
 			if (foundMines === state.TotalMines && flagged === state.TotalMines) {
 				state.GameStatus = GAME_STATUS.WIN;
 			}
@@ -199,7 +200,6 @@ const updateGameStatus = (state) => {
 		} else if (covered === state.BoardRow * state.BoardCol) {
 			state.GameStatus = GAME_STATUS.INIT;
 		}
-	}
 };
 const revealCellDerivation = (payload, state) => {
 	const { cell } = payload;
@@ -217,12 +217,12 @@ const revealCellDerivation = (payload, state) => {
 					[0, -1], [0, 1], // left, right
 					[-1, 0], [1, 0], // above, below
 					[-1, -1], [-1, 1], // top-left, top-right
-					[1, -1], [1, 1], // bottom-left, bottom-right
+					[1, -1], [1, 1] // bottom-left, bottom-right
 				].forEach((diff) => {
 					const neighborRow = head.cellRow + diff[0];
 					const neighborCol = head.cellCol + diff[1];
-					const valid = neighborRow >= 0 && neighborRow < state.BoardRow
-						&& neighborCol >= 0 && neighborCol < state.BoardCol;
+					const valid = neighborRow >= 0 && neighborRow < state.BoardRow &&
+						neighborCol >= 0 && neighborCol < state.BoardCol;
 					if (valid && !processed.has(`${neighborRow} ${neighborCol}`)) {
 						const neighborOrder = neighborRow * state.BoardRow + neighborCol;
 						const neighbor = state.Cells[neighborOrder];
@@ -230,21 +230,26 @@ const revealCellDerivation = (payload, state) => {
 							neighbor.displayValue = '';
 							neighbor.status = CELL_STATUS.UNCOVERED;
 
-							updateList.push(neighbor);
 							processList.push(neighbor);
 							processed.add(neighbor.cellKey);
 						} else if (neighbor.surroundingMines > 0) {
 							neighbor.displayValue = neighbor.surroundingMines;
 							neighbor.status = CELL_STATUS.UNCOVERED;
-
-							updateList.push(neighbor);
+						} else if (neighbor.surroundingMines < 0) {
+							neighbor.displayValue = MINE;
+							neighbor.status = CELL_STATUS.UNCOVERED;
 						}
+						updateList.push(neighbor);
 					}
 				});
 			} else {
-				head.displayValue = head.surroundingMines;
-				head.status = CELL_STATUS.UNCOVERED;
+				if (head.surroundingMines > 0) {
+					head.displayValue = head.surroundingMines;
+				} else {
+					head.displayValue = MINE;
+				}
 
+				head.status = CELL_STATUS.UNCOVERED;
 				updateList.push(head);
 			}
 		}
@@ -262,7 +267,7 @@ const revealCellDerivation = (payload, state) => {
 const flagCellDerivation = (payload, state) => {
 	const { cell } = payload;
 	if (cell.status === CELL_STATUS.COVERED) {
-		state.Cells[cell.cellOrder].displayValue = 'F';
+		state.Cells[cell.cellOrder].displayValue = FLAG;
 		state.Cells[cell.cellOrder].status = CELL_STATUS.FLAGGED;
 	} else if (cell.status === CELL_STATUS.FLAGGED) {
 		state.Cells[cell.cellOrder].displayValue = '';
@@ -279,7 +284,6 @@ const rootReducer = (state = INIT_STATE, action) => {
 		newState = revealCellDerivation(action.payload, state);
 	} else if (action.type === ACTIONS.FLAG_CELL && (state.GameStatus === GAME_STATUS.INIT || state.GameStatus === GAME_STATUS.PLAYING)) {
 		newState = flagCellDerivation(action.payload, state);
-	} else {
 	}
 
 	return newState;
@@ -288,4 +292,4 @@ const rootReducer = (state = INIT_STATE, action) => {
 const store = createStore(rootReducer);
 
 export default store;
-export { CELL_STATUS, RevealCell, FlagCell };
+export { CELL_STATUS, RevealCell, FlagCell, MINE, FLAG};
