@@ -123,13 +123,7 @@ const Cell = (props) => {
 			{CELL_DISPLAY_VALUE[displayValue]}
 		</div>
 	</div>;
-	return <div>{element}</div>;
-
-	/*
-	 * return <Tooltip title={ surroundingMines === -1 ? 'true' : 'false'} key={`${row} ${col}`}>
-	 * 	{element}
-	 * </Tooltip>;
-	 */
+	return <div key={`${row} ${col}`}>{element}</div>;
 };
 const ConnectedBoard = (props) => {
 	const { BoardRow, BoardCol, Cells, RevealCell, FlagCell } = props;

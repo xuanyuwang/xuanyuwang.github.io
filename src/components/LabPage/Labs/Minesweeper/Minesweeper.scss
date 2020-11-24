@@ -5,9 +5,6 @@
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
 
-		.flag {
-		}
-
 		.game-status {
 			grid-column: 2;
 			display: grid;

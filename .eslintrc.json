@@ -215,7 +215,7 @@
         "no-spaced-func": "error",
         "no-sync": "error",
         "no-tabs": [
-            "error",
+            "off",
             {
                 "allowIndentationTabs": true
             }
@@ -273,6 +273,7 @@
         "radix": "error",
         "react-hooks/rules-of-hooks": "error",
         "react-hooks/exhaustive-deps": "warn",
+        "react/prop-types": "off",
         "require-atomic-updates": "error",
         "require-await": "error",
         "require-jsdoc": "error",
