@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Container from '@material-ui/core/Container';
-import Tooltip from '@material-ui/core/Tooltip';
+import Button from '@material-ui/core/Button';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
 
 import { connect, Provider } from 'react-redux';
-import MineSweeperStore from './Minesweeper-redux';
-import { CELL_STATUS, RevealCell, FlagCell, MINE, FLAG } from './Minesweeper-redux';
+import MineSweeperStore, {
+	CELL_STATUS,
+	MINE,
+	FLAG,
+	ActionBuilders,
+	BOARD_SIZES,
+	GAME_STATUS
+} from './Minesweeper-redux';
 
 import './Minesweeper.scss';
 
@@ -21,21 +29,56 @@ const CELL_DISPLAY_VALUE = {
 CELL_DISPLAY_VALUE[MINE] = '💣';
 CELL_DISPLAY_VALUE[FLAG] = '🚩';
 
-const ConnectedStatusBar = ({ GameStatus }) => {
+const GAME_STATUS_DISPLAY_VALUE = {};
+GAME_STATUS_DISPLAY_VALUE[GAME_STATUS.INIT] = '🟢';
+GAME_STATUS_DISPLAY_VALUE[GAME_STATUS.PLAYING] = '🟢 Playing';
+GAME_STATUS_DISPLAY_VALUE[GAME_STATUS.WIN] = '🕊 Win!';
+GAME_STATUS_DISPLAY_VALUE[GAME_STATUS.FAIL] = ' 😱 Fail';
+
+const ConnectedStatusBar = ({ Flagged, GameStatus, NewGame, ChangeBoardSize }) => {
+	const [changeSizeMenuAnchor, setChangeSizeMenuAnchor] = useState(null);
 	return <Container className='status-bar'>
-		<div className='flag'>
-			{/* <Container className='flag-content'>
-				<Container className='flag-icon'>Flag: </Container>
-				<Container className='flag-number'>{flags}</Container>
-			</Container> */}
-		</div>
 		<Container className='game-status'>
-			{GameStatus}
+			<div className='flag'>
+				<Container className='flag-content'>
+					{`🚩: ${Flagged}`}
+				</Container>
+			</div>
+			{GAME_STATUS_DISPLAY_VALUE[GameStatus]}
+		</Container>
+		<Container className='game-controls'>
+			<Button color='primary' onClick={() => {
+				NewGame();
+			}}>
+				🔄 New Game
+		</Button>
+			<Button onClick={(event) => {
+				setChangeSizeMenuAnchor(event.currentTarget);
+			}}>
+				Change game size
+		</Button>
+			<Menu keepMounted anchorEl={changeSizeMenuAnchor} open={Boolean(changeSizeMenuAnchor)}>
+				<MenuItem onClick={() => {
+					ChangeBoardSize(BOARD_SIZES.SMALL);
+					setChangeSizeMenuAnchor(null);
+				}}>Small</MenuItem>
+				<MenuItem onClick={() => {
+					ChangeBoardSize(BOARD_SIZES.MEDIUM);
+					setChangeSizeMenuAnchor(null);
+				}}>Medium</MenuItem>
+				<MenuItem onClick={() => {
+					ChangeBoardSize(BOARD_SIZES.LARGE);
+					setChangeSizeMenuAnchor(null);
+				}}>Large</MenuItem>
+			</Menu>
 		</Container>
 	</Container>;
 };
 const StatusBar = connect((state) => {
 	return { ...state };
+}, {
+	NewGame: ActionBuilders.NewGame,
+	ChangeBoardSize: ActionBuilders.ChangeBoardSize
 })(ConnectedStatusBar);
 
 const Cell = (props) => {
@@ -43,7 +86,7 @@ const Cell = (props) => {
 		cell,
 		RevealCell,
 		FlagCell,
-		cellSize,
+		cellSize
 	} = props;
 	const {
 		surroundingMines,
@@ -81,9 +124,12 @@ const Cell = (props) => {
 		</div>
 	</div>;
 	return <div>{element}</div>;
-	// return <Tooltip title={ surroundingMines === -1 ? 'true' : 'false'} key={`${row} ${col}`}>
-	// 	{element}
-	// </Tooltip>;
+
+	/*
+	 * return <Tooltip title={ surroundingMines === -1 ? 'true' : 'false'} key={`${row} ${col}`}>
+	 * 	{element}
+	 * </Tooltip>;
+	 */
 };
 const ConnectedBoard = (props) => {
 	const { BoardRow, BoardCol, Cells, RevealCell, FlagCell } = props;
@@ -109,15 +155,15 @@ const ConnectedBoard = (props) => {
 const Board = connect((state) => {
 	return { ...state };
 }, {
-	RevealCell,
-	FlagCell
+	RevealCell: ActionBuilders.RevealCell,
+	FlagCell: ActionBuilders.FlagCell
 })(ConnectedBoard);
 
 const MineSweeper = () => {
 	return <Provider store={MineSweeperStore}>
 		<Container className='minesweeper'>
-			<StatusBar/>
-			<Board/>
+			<StatusBar />
+			<Board />
 		</Container>
 	</Provider>;
 };
