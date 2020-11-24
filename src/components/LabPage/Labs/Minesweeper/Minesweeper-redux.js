@@ -41,6 +41,7 @@ const CELL_STATUS = {
 // initial states
 /**
  * state = {
+ * 	Flagged,
  * 	BoardRow,
  *  BoardCol,
  *  TotalMines,
@@ -56,13 +57,13 @@ const CELL_STATUS = {
  * 	}]
  * }
  */
-const buildInitialState = () => {
+const buildNewState = (boardSizeSpec) => {
 	const state = {};
-	const defaultBoardSizeSpec = BOARD_SIZE_SPECS[BOARD_SIZES.SMALL];
-	state.BoardRow = defaultBoardSizeSpec.row;
-	state.BoardCol = defaultBoardSizeSpec.col;
-	state.TotalMines = defaultBoardSizeSpec.totalMines;
+	state.BoardRow = boardSizeSpec.row;
+	state.BoardCol = boardSizeSpec.col;
+	state.TotalMines = boardSizeSpec.totalMines;
 	state.GameStatus = GAME_STATUS.INIT;
+	state.Flagged = 0;
 
 	const locateMines = (row, col, totalMines) => {
 		const mineIndices = [];
@@ -128,16 +129,18 @@ const buildInitialState = () => {
 
 	return state;
 };
-const INIT_STATE = buildInitialState();
+const INIT_STATE = buildNewState(BOARD_SIZE_SPECS[BOARD_SIZES.SMALL]);
 
 // actions
 const ACTIONS = {
 	REVEAL_CELL: 'REVEAL_CELL',
 	FLAG_CELL: 'FLAG_CELL',
 	EXPAND: 'EXPAND',
-	NEW_GAME: 'NEW_GAME'
+	NEW_GAME: 'NEW_GAME',
+	CHANGE_BOARD_SIZE: 'CHANGE_BOARD_SIZE'
 };
 
+// action builders
 const RevealCell = (cell) => {
 	return {
 		type: ACTIONS.REVEAL_CELL,
@@ -165,10 +168,21 @@ const Expand = (cell) => {
 	};
 };
 
-/*
- * reducer
- * reducer helpers
- */
+const NewGame = () => {
+	return {
+		type: ACTIONS.NEW_GAME
+	}
+};
+
+const ChangeBoardSize = (boardSize) => {
+	return {
+		type: ACTIONS.CHANGE_BOARD_SIZE,
+		payload: boardSize
+	};
+}
+
+// reducer
+// reducer helpers
 const updateGameStatus = (state) => {
 	const { Cells } = state;
 	let flagged = 0;
@@ -189,6 +203,7 @@ const updateGameStatus = (state) => {
 			}
 		}
 	});
+	state.Flagged = flagged;
 	if (stepOnMine) {
 		state.GameStatus = GAME_STATUS.FAIL;
 	} else if (covered === 0) {
@@ -284,6 +299,10 @@ const rootReducer = (state = INIT_STATE, action) => {
 		newState = revealCellDerivation(action.payload, state);
 	} else if (action.type === ACTIONS.FLAG_CELL && (state.GameStatus === GAME_STATUS.INIT || state.GameStatus === GAME_STATUS.PLAYING)) {
 		newState = flagCellDerivation(action.payload, state);
+	} else if (action.type === ACTIONS.NEW_GAME) {
+		newState = buildNewState(BOARD_SIZE_SPECS[BOARD_SIZES.SMALL]);
+	} else if (action.type === ACTIONS.CHANGE_BOARD_SIZE) {
+		newState = buildNewState(BOARD_SIZE_SPECS[action.payload]);
 	}
 
 	return newState;
@@ -292,4 +311,11 @@ const rootReducer = (state = INIT_STATE, action) => {
 const store = createStore(rootReducer);
 
 export default store;
-export { CELL_STATUS, RevealCell, FlagCell, MINE, FLAG};
+export { GAME_STATUS, CELL_STATUS, MINE, FLAG, BOARD_SIZES};
+export const ActionBuilders = {
+	RevealCell,
+	FlagCell,
+	Expand,
+	NewGame,
+	ChangeBoardSize
+};
