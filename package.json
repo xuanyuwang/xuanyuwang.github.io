@@ -1,14 +1,20 @@
 {
-    "name": "Xuanyu's site",
-    "version": "0.2",
+    "name": "Xuanyu-site",
+    "version": "0.2.0",
     "dependencies": {
         "react": "^17.0.1",
         "react-dom": "^17.0.1"
     },
     "devDependencies": {
+        "clean-webpack-plugin": "^3.0.0",
+        "css-loader": "^5.1.0",
         "gh-pages": "^3.1.0",
+        "html-webpack-plugin": "^5.2.0",
+        "style-loader": "^2.0.0",
         "webpack": "^5.24.2",
         "webpack-cli": "^4.5.0"
     },
-    "scripts": {}
+    "scripts": {
+        "dev": "npx webpack --config ./buildTools/dev.config.js"
+    }
 }
