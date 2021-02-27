@@ -17,11 +17,13 @@
         "typescript": "^4.2.2",
         "webpack": "^5.24.2",
         "webpack-cli": "^4.5.0",
-        "webpack-dev-server": "^3.11.2"
+        "webpack-dev-server": "^3.11.2",
+        "webpack-merge": "^5.7.3"
     },
     "scripts": {
-        "dev": "npx webpack --config ./buildTools/dev.config.js",
-        "watch": "webpack --watch --config ./buildTools/dev.config.js",
-        "start": "webpack serve --config ./buildTools/dev.config.js --open"
+        "dev": "webpack --config ./buildTools/webpack.dev.js",
+        "watch": "webpack --watch --config ./buildTools/webpack.dev.js",
+        "start": "webpack serve --config ./buildTools/webpack.dev.js --open",
+        "build": "webpack --config ./buildTools/webpack.prod.js"
     }
 }

@@ -6,10 +6,6 @@ module.exports = {
     entry: {
         index: './src/js/entrypoint/index.ts'
     },
-    devtool: 'inline-source-map',
-    devServer: {
-        contentBase: '../dist'
-    },
     plugins: [
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
@@ -41,6 +37,5 @@ module.exports = {
         splitChunks: {
             chunks: 'all'
         }
-    },
-    mode: "development"
+    }
 }
