@@ -15,6 +15,7 @@
         "webpack-cli": "^4.5.0"
     },
     "scripts": {
-        "dev": "npx webpack --config ./buildTools/dev.config.js"
+        "dev": "npx webpack --config ./buildTools/dev.config.js",
+        "watch": "webpack --watch --config ./buildTools/dev.config.js"
     }
 }
