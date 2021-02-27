@@ -7,6 +7,9 @@ module.exports = {
         index: './src/js/entrypoint/index.js'
     },
     devtool: 'inline-source-map',
+    devServer: {
+        contentBase: '../dist'
+    },
     plugins: [
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
