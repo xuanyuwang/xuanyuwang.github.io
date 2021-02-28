@@ -13,7 +13,7 @@ module.exports = {
 			title: "Xuanyu"
 		}),
 		new ESLintPlugin({
-            rulePaths: ['./configurations'],
+			rulePaths: ['./configurations'],
 			extensions: ['js', 'jsx'],
 			fix: true,
 			fixTypes: ["problem", "suggestion", "layout"],
@@ -37,7 +37,7 @@ module.exports = {
 				exclude: /node_modules/
 			},
 			{
-				test: /\.jsx$/i,
+				test: /\.jsx?$/i,
 				exclude: /node_modules/,
 				use: {
 					loader: 'babel-loader',

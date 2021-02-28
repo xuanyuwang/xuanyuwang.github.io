@@ -1,5 +1,5 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 import Shell from "../components/Shell/Shell";
 import Manifest from './Manifest';
 
@@ -14,7 +14,7 @@ const renderSite = async () => {
 	prepareDocument();
 
 	const starterPageName = Manifest.StarterPage;
-	const pageModule = await import(`./${starterPageName}.jsx`);
+	const pageModule = await import(`./${starterPageName}`);
 	const StarterPage = pageModule.default;
 	const Site = <React.Fragment>
 		<Shell>
