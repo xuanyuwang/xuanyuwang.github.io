@@ -1,5 +1,5 @@
 const Manifest = {
-    "StarterPage": "HomePage"
+	"StarterPage": "HomePage"
 };
 
 export default Manifest;
