@@ -1,1 +1,1 @@
-import renderSite from '../pages/Starter';
+import '../pages/Starter';
