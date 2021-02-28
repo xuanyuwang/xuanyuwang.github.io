@@ -16,9 +16,11 @@ async function renderSite(){
     const starterPageName = Manifest.StarterPage;
     const pageModule = await import(`./${starterPageName}.jsx`);
     const StarterPage = pageModule.default;
-    const Site = <Shell>
+    const Site = <React.Fragment>
+        <Shell>
+        </Shell>
         <StarterPage></StarterPage>
-    </Shell>;
+    </React.Fragment>;
     const page = document.getElementById('page');
     ReactDOM.render(Site, page);
 }
