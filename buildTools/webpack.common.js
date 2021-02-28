@@ -4,7 +4,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
     entry: {
-        index: './src/js/entrypoint/index.ts'
+        index: './src/js/entrypoint/index.js'
     },
     plugins: [
         new CleanWebpackPlugin(),
@@ -26,13 +26,28 @@ module.exports = {
                 test: /\.tsx?$/,
                 use: 'ts-loader',
                 exclude: /node_modules/
+            },
+            {
+                test: /\.jsx$/i,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: [
+                            '@babel/preset-env',
+                            '@babel/preset-react'
+                        ],
+                        plugins: ['@babel/plugin-transform-runtime']
+                    }
+                }
             }
         ]
     },
     resolve: {
-        extensions: ['.tsx', '.ts', '.js']
+        extensions: ['.tsx', '.ts', '.js', '.jsx']
     },
     optimization: {
+        usedExports: true,
         runtimeChunk: 'single',
         splitChunks: {
             chunks: 'all'
