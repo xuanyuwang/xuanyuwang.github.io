@@ -5,7 +5,7 @@ const ESLintPlugin = require('eslint-webpack-plugin');
 
 module.exports = {
 	entry: {
-		index: './src/js/entrypoint/index.js'
+		index: './src/js/entrypoint/index.ts'
 	},
 	plugins: [
 		new CleanWebpackPlugin(),
