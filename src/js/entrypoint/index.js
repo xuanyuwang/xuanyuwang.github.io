@@ -1,0 +1,1 @@
+import renderSite from '../pages/Starter';
