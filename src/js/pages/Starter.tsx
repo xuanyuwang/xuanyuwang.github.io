@@ -14,7 +14,7 @@ const renderSite = async () => {
 	prepareDocument();
 
 	const starterPageName = Manifest.StarterPage;
-	const pageModule = await import(`./${starterPageName}`);
+	const pageModule = await import(`js/pages/${starterPageName}`);
 	const StarterPage = pageModule.default;
 	const Site = <React.Fragment>
 		<Shell>
