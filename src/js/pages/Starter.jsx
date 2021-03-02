@@ -1,9 +1,12 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import Shell from "../components/Shell/Shell";
+import { Provider, connect } from 'react-redux';
+import { RootStore } from 'js/APIs/RootAPI';
 
-import { Manifest } from 'js/APIs/Manifest';
-import { RootAPI } from 'js/APIs/RootAPI';
+import { loadPage } from 'js/APIs/utils';
+
+import './site.scss';
 
 const prepareDocument = () => {
 	const body = document.body;
@@ -12,17 +15,30 @@ const prepareDocument = () => {
 	body.appendChild(page);
 };
 
+const site = (props) => {
+	const pageName = props.page;
+	const { default: page } = loadPage(pageName);
+	return <Provider store={RootStore}>
+		<Shell></Shell>
+		<div id={'page-body'}>
+			{page()}
+		</div>
+	</Provider>;
+};
+const ConnectedSite = connect((state) => state)(site);
+
+const Site = () => {
+	return <Provider store={RootStore}>
+		<ConnectedSite></ConnectedSite>
+	</Provider>;
+};
+
 const renderSite = async () => {
 	prepareDocument();
 
-	const { default: StarterPage } = await RootAPI.loadPage(Manifest.StarterPage);
-	const Site = <React.Fragment>
-		<Shell>
-		</Shell>
-		<StarterPage></StarterPage>
-	</React.Fragment>;
-	const page = document.getElementById('page');
-	ReactDOM.render(Site, page);
-}
+	const site = Site();
+	const siteContainer = document.getElementById('page');
+	ReactDOM.render(site, siteContainer);
+};
 renderSite();
 export default renderSite;
