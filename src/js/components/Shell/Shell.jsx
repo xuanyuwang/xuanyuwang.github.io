@@ -7,7 +7,7 @@ import {
 	HeaderMenuItem
 } from 'carbon-components-react';
 
-const Shell = (props: any) => {
+const Shell = () => {
 	return <Header aria-label="Xuanyu's Corner">
 		<HeaderName href='#' prefix=''>
             Xuanyu&apos;s Corner
