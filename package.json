@@ -39,6 +39,7 @@
         "dev": "webpack --config ./buildTools/webpack.dev.js",
         "watch": "webpack --watch --config ./buildTools/webpack.dev.js",
         "start": "webpack serve --config ./buildTools/webpack.dev.js --open",
-        "build": "webpack --config ./buildTools/webpack.prod.js"
+        "build": "webpack --config ./buildTools/webpack.prod.js",
+        "deploy": "node scripts/publish-github.js"
     }
 }
