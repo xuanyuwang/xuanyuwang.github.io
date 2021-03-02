@@ -1,7 +1,9 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import Shell from "../components/Shell/Shell";
-import Manifest from './Manifest';
+
+import { Manifest } from 'js/APIs/Manifest';
+import { RootAPI } from 'js/APIs/RootAPI';
 
 const prepareDocument = () => {
 	const body = document.body;
@@ -13,9 +15,7 @@ const prepareDocument = () => {
 const renderSite = async () => {
 	prepareDocument();
 
-	const starterPageName = Manifest.StarterPage;
-	const pageModule = await import(`js/pages/${starterPageName}`);
-	const StarterPage = pageModule.default;
+	const { default: StarterPage } = await RootAPI.loadPage(Manifest.StarterPage);
 	const Site = <React.Fragment>
 		<Shell>
 		</Shell>
