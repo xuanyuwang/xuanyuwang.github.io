@@ -13,7 +13,6 @@ module.exports = {
 			title: "Xuanyu"
 		}),
 		new ESLintPlugin({
-			rulePaths: ['./configurations'],
 			extensions: ['js', 'jsx'],
 			fix: true,
 			fixTypes: ["problem", "suggestion", "layout"],

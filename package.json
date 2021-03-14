@@ -40,6 +40,6 @@
         "watch": "webpack --watch --config ./buildTools/webpack.dev.js",
         "start": "webpack serve --config ./buildTools/webpack.dev.js --open",
         "build": "webpack --config ./buildTools/webpack.prod.js",
-        "deploy": "cp CNAME ./dist && node scripts/publish-github.js"
+        "deploy": "node scripts/publish-github.js"
     }
 }
