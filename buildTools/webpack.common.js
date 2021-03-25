@@ -48,10 +48,19 @@ module.exports = {
 						plugins: ['@babel/plugin-transform-runtime']
 					}
 				}
+			},
+			{
+				test: /\.(pdf)/,
+				use: {
+					loader: 'file-loader'
+				}
 			}
 		]
 	},
 	resolve: {
+		alias: {
+			static: path.resolve(__dirname, '../static')
+		},
 		modules: [path.resolve(__dirname, '../src'), 'node_modules'],
 		extensions: ['.tsx', '.ts', '.js', '.jsx']
 	},
