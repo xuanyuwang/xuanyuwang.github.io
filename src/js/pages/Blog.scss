@@ -1,0 +1,25 @@
+@import '@carbon/layout/scss/layout';
+@import '@carbon/colors/scss/colors';
+#page-blog {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+
+    #page-blog-main {
+        grid-column-start: 3;
+        grid-column-end: 14;
+        background-color: $carbon--gray-10;
+
+        #page-blog-list-container {
+            margin-top: $layout-03;
+
+            .page-blog-list-item {
+                padding-left: $spacing-07;
+                height: $layout-03;
+                line-height: $layout-03;
+                border-bottom-width: 1px;
+                border-bottom-style: solid;
+                border-bottom-color: $carbon--gray-20;
+            }
+        }
+    }
+}

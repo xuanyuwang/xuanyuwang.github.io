@@ -3,7 +3,10 @@
     "version": "0.2.0",
     "dependencies": {
         "@babel/runtime": "^7.13.8",
+        "@carbon/colors": "^10.22.0",
         "@carbon/icons-react": "^10.26.0",
+        "@carbon/layout": "^10.22.0",
+        "@carbon/themes": "^10.31.0",
         "carbon-components": "^10.29.0",
         "carbon-components-react": "^7.29.0",
         "carbon-icons": "^7.0.7",

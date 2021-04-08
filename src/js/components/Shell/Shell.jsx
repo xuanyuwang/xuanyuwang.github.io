@@ -18,7 +18,7 @@ const Shell = (props) => {
 		<HeaderNavigation aria-label="navigation">
 			<HeaderMenuItem onClick={() => { props.switchPage(PageNames.HOME); }}>Home</HeaderMenuItem>
 			<HeaderMenuItem onClick={() => { props.switchPage(PageNames.ME); }}>About Me</HeaderMenuItem>
-			<HeaderMenuItem>Playgounds</HeaderMenuItem>
+			<HeaderMenuItem onClick={() => { props.switchPage(PageNames.BLOG); }}>Blog</HeaderMenuItem>
 		</HeaderNavigation>
 	</Header>;
 	return <Provider store={RootStore}>
