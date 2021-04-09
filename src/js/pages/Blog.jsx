@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { UnorderedList, ListItem, Link } from 'carbon-components-react';
+import { Link } from 'carbon-components-react';
 
 import './Blog.scss';
 

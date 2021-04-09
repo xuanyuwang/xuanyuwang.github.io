@@ -4,7 +4,7 @@ const PageNames = {
 	BLOG: "BLOG"
 };
 const Manifest = {
-	"StarterPage": PageNames.BLOG,
+	"StarterPage": PageNames.ME,
 	"Pages": {
 		[PageNames.HOME]: 'js/pages/HomePage',
 		[PageNames.ME]: 'js/pages/Me',
