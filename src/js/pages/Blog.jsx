@@ -1,15 +1,21 @@
 import * as React from 'react';
 import { Link } from 'carbon-components-react';
+import {List as BlogList } from './blogList';
 
 import './Blog.scss';
 
 const pageId = 'page-blog';
 
 const Blogs = () => {
+	console.log(BlogList);
+	const blogs = BlogList.map((item) => {
+		const {name, link} = item;
+		return <Link key={name} href={link}>{name}</Link>;
+	});
 	return <div id={`${pageId}-main`}>
 		<div id={`${pageId}-list-container`}>
 			<div className={`${pageId}-list-item`}>
-				<Link href={"https://www.notion.so/Web-Project-28adcdb3b74344d8b87764e00991e6db"}>The structure of a web project</Link>
+				{blogs}
 			</div>
 		</div>
 	</div>;
