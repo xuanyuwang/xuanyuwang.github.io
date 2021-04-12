@@ -50,7 +50,7 @@ module.exports = {
 				}
 			},
 			{
-				test: /\.(pdf)/,
+				test: /\.(jpe?g|pdf)/,
 				use: {
 					loader: 'file-loader'
 				}
