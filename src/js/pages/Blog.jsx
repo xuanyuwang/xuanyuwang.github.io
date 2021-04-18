@@ -10,13 +10,13 @@ const Blogs = () => {
 	console.log(BlogList);
 	const blogs = BlogList.map((item) => {
 		const {name, link} = item;
-		return <Link key={name} href={link}>{name}</Link>;
+		return <div key={name} className={`${pageId}-list-item`}>
+			<Link href={link}>{name}</Link>
+		</div>;
 	});
 	return <div id={`${pageId}-main`}>
 		<div id={`${pageId}-list-container`}>
-			<div className={`${pageId}-list-item`}>
-				{blogs}
-			</div>
+			{blogs}
 		</div>
 	</div>;
 };
