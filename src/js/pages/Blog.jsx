@@ -3,6 +3,7 @@ import { Link } from 'carbon-components-react';
 import {List as BlogList } from './blogList';
 
 import './Blog.scss';
+import 'carbon-components/scss/components/link/_link.scss';
 
 const pageId = 'page-blog';
 

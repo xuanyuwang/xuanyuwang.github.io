@@ -16,15 +16,12 @@
             margin-top: $layout-03;
 
             .page-blog-list-item {
-                height: $layout-04;
-                line-height: $layout-04;
+                height: max-content;
+                padding-top: $spacing-03;
+                padding-bottom: $spacing-03;
                 border-bottom-width: 1px;
                 border-bottom-style: solid;
                 border-bottom-color: $carbon--gray-20;
-
-                a {
-                    text-decoration: none;
-                }
             }
         }
     }
