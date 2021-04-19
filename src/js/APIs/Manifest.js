@@ -1,15 +1,14 @@
-const PageNames = {
-	HOME: "HOME",
-	ME: "ME",
-	BLOG: "BLOG"
-};
-const Manifest = {
-	"StarterPage": PageNames.ME,
-	"Pages": {
-		[PageNames.HOME]: 'js/pages/HomePage',
-		[PageNames.ME]: 'js/pages/Me',
-		[PageNames.BLOG]: 'js/pages/Blog'
+const Pages = {
+	ME: {
+		link: './me.html',
+		title: 'About me',
+		isIndex: true
+	},
+	BLOG: {
+		link: './blog.html',
+		title: 'Blogs'
 	}
 };
 
-export { Manifest, PageNames };
+export default Pages;
+export { Pages };

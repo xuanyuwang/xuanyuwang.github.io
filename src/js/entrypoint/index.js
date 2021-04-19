@@ -1,1 +1,0 @@
-import 'js/pages/Starter';

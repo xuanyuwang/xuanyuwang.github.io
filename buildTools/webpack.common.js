@@ -1,16 +1,36 @@
 const path = require('path');
+const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
 
-module.exports = {
-	entry: {
-		index: './src/js/entrypoint/index.js'
-	},
+const context = path.resolve(__dirname, '../src/js/pages');
+const findEntryPoints = () => {
+	const entries = {};
+	fs.readdirSync(context).forEach((file) => {
+		const nameParts = file.split('.');
+		const name = nameParts[0];
+		const ext = nameParts[nameParts.length - 1];
+		if (ext == 'jsx') {
+			entries[name] = './' + file;
+		}
+	});
+	return entries;
+};
+const entryPoints = findEntryPoints();
+
+const config = {
+	context: context,
+	entry: entryPoints,
 	plugins: [
 		new CleanWebpackPlugin(),
-		new HtmlWebpackPlugin({
-			title: "Xuanyu"
+		...Object.keys(entryPoints).map((entry) => {
+			const filename = entry.toLowerCase() + '.html';
+			return new HtmlWebpackPlugin({
+				title: entry,
+				filename,
+				chunks: [`${entry}`]
+			});
 		}),
 		new ESLintPlugin({
 			extensions: ['js', 'jsx'],
@@ -76,3 +96,5 @@ module.exports = {
 		}
 	}
 };
+
+module.exports = config;

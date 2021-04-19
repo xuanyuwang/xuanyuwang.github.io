@@ -1,5 +1,7 @@
 @import '@carbon/layout/scss/layout';
 @import '@carbon/colors/scss/colors';
+
+@import './index';
 #page-blog {
     display: grid;
     grid-template-columns: repeat(16, 1fr);
