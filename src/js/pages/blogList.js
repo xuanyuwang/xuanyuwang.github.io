@@ -10,6 +10,10 @@ const List = [
 	{
 		name: 'Drag & drop: mouse events, vanilla JavaScript, only one object, and a container',
 		link: 'https://www.notion.so/Drag-drop-mouse-events-vanilla-JavaScript-only-one-object-and-a-container-cc37a71421614cd1a46d475caeab4669'
+	},
+	{
+		name: 'Drag & drop: mouse events, vanilla JavaScript, MULTIPLE objects, and a container',
+		link: 'https://www.notion.so/Drag-drop-mouse-events-vanilla-JavaScript-MULTIPLE-objects-and-a-container-49dc2a706bab40d9b6f37c06e24be092'
 	}
 ];
 
