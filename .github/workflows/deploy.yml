@@ -37,10 +37,22 @@ jobs:
       - name: Build site
         run: npm run build
 
+      - name: Package Pages artifact
+        run: |
+          tar \
+            --directory dist \
+            --hard-dereference \
+            --create \
+            --file github-pages.tar \
+            .
+          gzip --best --keep github-pages.tar
+
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
-          path: dist
+          name: github-pages
+          path: github-pages.tar.gz
+          retention-days: 1
 
   deploy:
     environment:
