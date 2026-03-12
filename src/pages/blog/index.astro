@@ -1,0 +1,45 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+
+type BlogEntry = CollectionEntry<"blog">;
+
+const fallbackDateFromId = (id: string): Date => {
+  const match = id.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? new Date(`${match[1]}T00:00:00Z`) : new Date(0);
+};
+
+const getPostDate = (post: BlogEntry): Date => post.data.date ?? fallbackDateFromId(post.id);
+
+const getPostTitle = (post: BlogEntry): string => {
+  if (post.data.title) return post.data.title;
+  const cleaned = post.id.replace(/^\d{4}-\d{2}-\d{2}-?/, "").replace(/[-_/]+/g, " ").trim();
+  return cleaned || post.id;
+};
+
+const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
+  (a, b) => getPostDate(b).valueOf() - getPostDate(a).valueOf(),
+);
+---
+
+<BaseLayout title="Blog | Xuanyu Wang" description="Blog posts">
+  <h1>Blog</h1>
+  <p class="meta">Markdown-first posts with optional Typst assets.</p>
+
+  <section class="panel">
+    <ul class="clean">
+      {
+        posts.map((post) => (
+          <li>
+            <a href={`/blog/${post.id}/`}>{getPostTitle(post)}</a>
+            <div class="meta">{getPostDate(post).toISOString().slice(0, 10)}</div>
+            {post.data.tags.map((tag) => (
+              <span class="badge">{tag}</span>
+            ))}
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>

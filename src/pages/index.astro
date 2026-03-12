@@ -1,0 +1,54 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+
+type BlogEntry = CollectionEntry<"blog">;
+
+const fallbackDateFromId = (id: string): Date => {
+  const match = id.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? new Date(`${match[1]}T00:00:00Z`) : new Date(0);
+};
+
+const getPostDate = (post: BlogEntry): Date => post.data.date ?? fallbackDateFromId(post.id);
+
+const getPostTitle = (post: BlogEntry): string => {
+  if (post.data.title) return post.data.title;
+  const cleaned = post.id.replace(/^\d{4}-\d{2}-\d{2}-?/, "").replace(/[-_/]+/g, " ").trim();
+  return cleaned || post.id;
+};
+
+const allPosts = await getCollection("blog");
+const recentPosts = allPosts
+  .sort((a, b) => getPostDate(b).valueOf() - getPostDate(a).valueOf())
+  .slice(0, 5);
+---
+
+<BaseLayout title="Xuanyu Wang" description="Personal site with blog and apps">
+  <h1>Personal Site</h1>
+  <p>
+    This site hosts my blog posts (generated from my knowledge workspace) and links to personal web apps.
+  </p>
+
+  <section class="panel">
+    <h2>Apps</h2>
+    <ul class="clean">
+      <li><a href="/qimen/">QiMen DunJia Chart</a></li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Recent Posts</h2>
+    <ul class="clean">
+      {
+        recentPosts.map((post) => (
+          <li>
+            <a href={`/blog/${post.id}/`}>{getPostTitle(post)}</a>
+            <div class="meta">{getPostDate(post).toISOString().slice(0, 10)}</div>
+          </li>
+        ))
+      }
+    </ul>
+    <p><a href="/blog/">View all posts</a></p>
+  </section>
+</BaseLayout>

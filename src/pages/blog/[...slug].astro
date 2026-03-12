@@ -1,0 +1,31 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection, render } from "astro:content";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog", ({ data }) => !data.draft);
+
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const fallbackDate = (() => {
+  const match = post.id.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? new Date(`${match[1]}T00:00:00Z`) : new Date(0);
+})();
+const fallbackTitle = post.id.replace(/^\d{4}-\d{2}-\d{2}-?/, "").replace(/[-_/]+/g, " ").trim();
+const postTitle = post.data.title ?? (fallbackTitle || post.id);
+const postDate = post.data.date ?? fallbackDate;
+---
+
+<BaseLayout title={`${postTitle} | Blog`} description={post.data.description}>
+  <article class="panel">
+    <h1>{postTitle}</h1>
+    <p class="meta">{postDate.toISOString().slice(0, 10)}</p>
+    <Content />
+  </article>
+</BaseLayout>
