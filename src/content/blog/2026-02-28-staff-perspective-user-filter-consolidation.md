@@ -1,5 +1,5 @@
 ---
-title: "When Shared Logic Drifts: Turning Fragile Conventions Into Organizational Capability"
+title: "Who Sees What: Why Access Semantics Can't Be Left to Convention"
 description: A staff engineer's approach to unifying drifted user-filter logic across services
 date: 2026-02-28
 tags:
