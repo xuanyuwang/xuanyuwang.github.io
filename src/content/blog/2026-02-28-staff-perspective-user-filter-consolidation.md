@@ -1,5 +1,5 @@
 ---
-title: "Consolidating User-Filter Semantics Across 30+ Analytics APIs"
+title: "When Shared Logic Drifts: Turning Fragile Conventions Into Organizational Capability"
 description: A staff engineer's approach to unifying drifted user-filter logic across services
 date: 2026-02-28
 tags:

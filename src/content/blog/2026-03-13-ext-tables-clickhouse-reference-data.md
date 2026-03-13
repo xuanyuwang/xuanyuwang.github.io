@@ -1,5 +1,5 @@
 ---
-title: "Solving the Reference Data Problem in Analytics Queries: ClickHouse External Tables"
+title: "Solving for the Class of Problems, Not the Instance"
 description: Evaluating 10 approaches to pass reference data from PostgreSQL to ClickHouse, and why external tables won
 date: 2026-03-13
 tags:

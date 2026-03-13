@@ -1,5 +1,5 @@
 ---
-title: "Debugging a Dual-Database Sync Bug: Three Fixes, Two Race Conditions, and the Trap of Async Side Effects"
+title: "The Trap of Async Side Effects in Dual-Write Systems"
 description: Investigating compounding race conditions in a PostgreSQL + ClickHouse dual-write system
 date: 2026-03-13
 tags:
