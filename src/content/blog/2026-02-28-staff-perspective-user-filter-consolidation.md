@@ -1,137 +1,117 @@
 ---
 title: "Who Sees What: Why Access Semantics Can't Be Left to Convention"
-description: A staff engineer's approach to unifying drifted user-filter logic across services
+description: When the rules governing data visibility exist only as implicit conventions, they drift — silently, consequentially, and in ways that look like bugs but are really missing definitions
 date: 2026-02-28
 tags:
   - architecture
   - staff-engineering
 ---
 
-# Consolidating User-Filter Semantics Across 30+ Analytics APIs
+# Who Sees What: Why Access Semantics Can't Be Left to Convention
 
-When an org grows, "the same logic" quietly gets re-implemented across services. User filtering is a classic example: every team needs it, edge cases accumulate, and correctness failures are hard to detect until customers notice.
+Every multi-tenant system has a layer that answers a deceptively simple question: *given this user's identity and permissions, what data should they see?*
 
-This post walks through a real consolidation of user-filter logic that had drifted across three separate implementations, 30+ API endpoints, and two query engines (PostgreSQL and ClickHouse). From a staff engineer's perspective, the interesting parts aren't the code — they're the methodology of defining "correct," the bugs that only surface at scale, and the tradeoff between a clean rewrite and incremental migration.
+This isn't a "filter." It's the access semantics of your product — the rules that define the boundary between what each customer can and can't interact with. When those rules are correct, nobody notices. When they drift, you get silent data leakage, invisible correctness bugs, and customer trust erosion that's hard to recover from.
 
-## The problem: three implementations, subtly different
+The dangerous thing about access semantics is that they feel like implementation details. Every team that builds a feature involving data visibility ends up encoding these rules somewhere — in a WHERE clause, in an API handler, in a utility function. And because the rules seem obvious ("of course an admin sees everyone"), they rarely get written down as a formal contract. They exist as convention.
 
-The system had user-filter logic in three places:
+Convention drifts.
 
-1. **Shared library** (`Parse`) — used by 3 coaching APIs. Clean, well-structured, with explicit options.
-2. **Analytics-specific function** (`ParseForAnalytics`) — a newer consolidated function used by ~12 migrated analytics APIs. Built using older utility functions to minimize migration risk.
-3. **Inline code** — the original pattern scattered across ~17 analytics API handlers, each composing the same 3-4 utility functions in slightly different ways.
+## What access semantics actually govern
 
-All three aimed to answer the same question: *given a requesting user's access level and the filter parameters, which set of users should this API return data for?*
+In the system I worked on, "user filtering" was the surface-level name, but the actual decisions it encoded were:
 
-But they diverged in subtle, consequential ways.
+- **Visibility scope**: Which users' data does this request return? All agents? Only the requester's direct reports? Only members of selected teams?
+- **Composition rules**: When a request specifies both individual users and groups, is the result a union or an intersection? This determines whether a manager sees "these people OR that team" vs. "these people who are also on that team."
+- **Empty-state semantics**: What does "no filter" mean? For an admin, it means "everyone." For a limited-access manager, it might mean "only my reports" or "nothing at all." The answer depends on the access control model — and it has security implications.
+- **Group expansion**: When you select a team, do you get all members? Only agents? Do nested groups expand recursively? Does expansion respect role constraints at every level?
+- **Interaction with access control**: How do ACL restrictions compose with explicit filter selections? Can a user filter to see someone outside their ACL scope?
 
-## Where the semantics drifted
+These aren't filter parameters. They're the product's access model, expressed through every API that returns user-scoped data.
 
-### Union vs. intersection
+## What happens when access semantics are implicit
 
-When a request includes both explicit user selections and group selections, should the result be the **union** (users OR group members) or the **intersection** (users who are also in those groups)?
+The system had three separate implementations of these rules, spread across 30+ API endpoints and two query engines (PostgreSQL and ClickHouse). Each aimed to answer the same question — *who should this request return data for?* — but they diverged in ways that were silent, consequential, and invisible until customers noticed.
 
-The inline code treated it as intersection. The shared library treated it as union. Neither was documented as a deliberate choice — they just evolved differently.
+### The composition question was answered both ways
 
-### Empty filter with full access
+When a request included both explicit user selections and group selections, one implementation treated it as a union. Another treated it as an intersection. Neither was documented as a deliberate choice. The code just evolved differently in two places, and both "worked" in the sense that they returned data without errors.
 
-When an admin makes a request with no user/group filter, the old inline code returned data for **all users** by simply omitting the `WHERE` clause. The new consolidated function instead fetched all user IDs and put them in a `WHERE user_id IN (...)` clause.
+The difference: a customer's analytics dashboard either showed data for 50 people or 12 people, depending on which API powered the widget. Both numbers looked plausible. Nobody noticed for months.
 
-This worked fine until a customer had 5,000+ agents. The generated SQL exceeded ClickHouse's 1MB query size limit:
+### "No filter" meant different things at different access levels
 
-```
-Syntax error: failed at position 1048561
-Max query size exceeded
-```
+When an admin made a request with no filter, one implementation omitted the WHERE clause entirely (correct, efficient). Another resolved "no filter" to a list of all user IDs and passed them as query parameters. Both returned the same data — until a customer had 5,000+ agents and the generated SQL exceeded the analytics database's 1MB query size limit.
 
-Same semantic intent ("all users"), completely different query strategy, invisible until a customer hit the threshold.
+Same semantic intent. Different implementation strategy. The divergence was invisible until a customer's scale exposed it.
 
-### ACL edge cases
+### ACL boundaries were enforced inconsistently
 
-Access Control List behavior introduced more divergence:
+The hardest questions were around access control:
 - What does "empty filter" mean when ACL restricts your view to a subset of users?
 - Should a manager with no direct reports see empty results or get an error?
 - When expanding a team group, do you respect role constraints (agents only) at every level?
 
-Each implementation answered these differently, and the answers weren't documented — they were embedded in `if/else` chains and test fixtures.
+Each implementation answered these differently. The answers weren't in documentation or specs — they were embedded in `if/else` chains and test fixtures. Some answers had security implications (a limited-access user seeing data outside their scope). None of the divergences produced errors. They just produced subtly wrong results.
 
-## The approach: behavioral standard first, code second
+## Making access semantics explicit
 
-### Step 1: Define what "correct" means
+The fix wasn't primarily a code change. It was making the implicit explicit.
 
-Before writing any code, I wrote a behavioral standard document — implementation-agnostic, describing *what* the filter should do across every combination of inputs:
+### A behavioral standard as source of truth
+
+Before writing any code, I wrote a behavioral standard document — implementation-agnostic, describing the expected behavior across every combination of inputs:
 
 - 4 access levels (root, ACL-disabled, limited with reports, limited without)
 - 3 filter types (user selection, group selection, combined)
 - 2 group types (team groups, virtual/dynamic groups)
 - Special flags (exclude deactivated, agents only, include dev users)
 
-For each combination: what's the expected user set? What goes in the WHERE clause? When do we early-return with empty results?
+For each combination: what's the expected visibility scope? When do we return empty results? What are the security invariants?
 
-This document became the source of truth. When the three implementations disagreed, we could point to the standard and say "this is the behavior we're targeting" rather than arguing about which legacy behavior was "more correct."
+This document became the contract. When three implementations disagreed, we could point to the standard instead of debating which legacy behavior was "more correct." It also served as onboarding material — new engineers could understand the access model without reverse-engineering three codebases.
 
-### Step 2: Flag known divergences
+### Inventorying the drift
 
-Comparing the three implementations against the standard revealed 5 behavioral divergences. Most were silent — they produced wrong results without errors. One (the union vs. intersection mismatch) affected a production customer's analytics.
+Comparing the three implementations against the standard revealed 5 behavioral divergences. Most were silent — they produced wrong results without errors. One (the union vs. intersection mismatch) affected production analytics for a customer. Each got a severity rating, a fix plan, and a test case.
 
-Each divergence got a severity rating, a fix plan, and a test case that would catch it.
+The inventory itself was valuable: it turned "the access logic is inconsistent" from a vague concern into a concrete list of known deviations with measurable impact.
 
-### Step 3: Fix critical bugs immediately, migrate incrementally
+### Incremental convergence, not a rewrite
 
-Rather than a big-bang rewrite:
-1. **Fix the union/intersection bug** in the analytics function — one PR, one behavioral change, gated behind the existing feature flag
-2. **Add the `ShouldQueryAllUsers` flag** to prevent the ClickHouse query size explosion — deployed and verified per-customer
-3. **Continue migrating** the 17 inline-code APIs to the consolidated function, one at a time
+The temptation was to unify everything into one clean implementation immediately. Instead:
 
-The temptation was to unify all three implementations into one clean library immediately. But the incremental approach was safer: each migration was a small, testable change, and we could verify correctness per-endpoint against the behavioral standard.
+1. **Fix the security-relevant divergences first** — the union/intersection mismatch and the ACL boundary issues, gated behind feature flags
+2. **Solve the scaling problem independently** — the query size limit was a real customer issue that couldn't wait for a full migration (this became its own project using ClickHouse external tables)
+3. **Migrate endpoints one at a time** — each migration was a small, testable change verified against the behavioral standard
 
-## The ClickHouse query size problem deserved its own solution
+This approach was slower than a rewrite but dramatically safer. Each step delivered value independently, and any step could be rolled back without affecting the others.
 
-The `ShouldQueryAllUsers` flag handled the "all users" case (empty filter + full access), but three scenarios still produced large user lists:
+## Why access semantics deserve special treatment
 
-| Scenario | Why it produces thousands of IDs |
-|----------|----------------------------------|
-| `exclude_deactivated_users=true` | Returns all active users (4,000 out of 5,000) |
-| Large group expansion | Team with thousands of members |
-| Limited-access manager with many reports | ACL returns all managed agent IDs |
+### They're a security boundary, not a convenience feature
 
-For these, we needed a query strategy that scaled. We evaluated 10 options (subqueries, temporary tables, query size increase, batching, etc.) and settled on **ClickHouse external data tables** — uploading the user ID list as a temporary table alongside the query, then joining against it:
+When filter logic is "just" a utility function, it gets treated with utility-function rigor: it works, it has some tests, it ships. But access semantics define what data crosses trust boundaries. A bug in a sorting function shows items in the wrong order. A bug in access semantics shows a customer data they shouldn't see — or hides data they need.
 
-```sql
--- Instead of:
-WHERE user_id IN ('id1', 'id2', ..., 'id5000')
+The review standard for access semantics should match the review standard for authentication and authorization, because that's what they are.
 
--- External table:
-WHERE user_id IN (SELECT user_id FROM ext_user_ids)
-```
+### They compound across endpoints
 
-This approach has no query size limit, works with the existing ClickHouse Go client, and requires no schema changes. It shipped behind its own feature flag, was validated per-customer on staging, and rolled out after confirming identical query results.
+One implementation with a subtle ACL bug is a bug. Thirty endpoints with three different interpretations of ACL rules is a systemic risk. Each new feature that touches user-scoped data either inherits an existing interpretation (which one?) or invents a new one. Without a standard, the drift accelerates.
 
-## What made this "staff-level" work
+### They're invisible when wrong
 
-### Defining the standard, not just the code
+Access semantics bugs don't produce errors. They produce data — just the wrong data, or the wrong amount of data. A dashboard that shows 50 users instead of 12 still renders. An analytics page that includes deactivated users still loads. The customer might notice eventually, or they might make decisions on incorrect data for months.
 
-The behavioral standard document was the highest-leverage artifact. Without it, every PR review became a debate about what the "right" behavior was. With it, reviews could focus on whether the implementation matched the spec. The document also served as onboarding material when other engineers needed to understand filter semantics.
-
-### Treating the migration as a product
-
-The migration had a dashboard: 29 APIs total, tracking which implementation each used, which divergences each was affected by, and the migration status. This turned an amorphous "we should clean this up" into a concrete project with measurable progress (12/29 migrated at the start, tracking toward 29/29).
-
-### Recognizing when a fix creates a new problem
-
-The `ShouldQueryAllUsers` flag was a correct fix for the "empty filter" case, but it introduced a subtle interaction with the external tables feature: when the flag was true, the external table wasn't populated, which meant ClickHouse fell back to scanning all rows without any user filter. This was functionally correct but missed the performance benefit of external tables for customers where "all users" still meant thousands of IDs meeting role/status criteria. Catching this required testing the two features together, not in isolation.
-
-### Choosing incremental migration over clean rewrite
-
-The three-implementation mess was frustrating, and a clean rewrite was tempting. But the incremental approach — fix bugs in the existing consolidated function, migrate endpoints one at a time, verify each against the behavioral standard — was lower risk and produced value sooner. The clean unification can happen later, when all 29 APIs are on the consolidated function and we have comprehensive test coverage.
+This invisibility is what makes convention-based access semantics so dangerous. The system never tells you it's wrong.
 
 ## The general pattern
 
-If you're consolidating duplicated logic across a codebase:
+If your system has logic that governs data visibility across multiple services or endpoints:
 
-1. **Write the behavioral standard first.** Implementation-agnostic, covering all input combinations and edge cases. This is your source of truth.
-2. **Inventory the divergences.** Compare each implementation against the standard. Rate severity. Some "divergences" are actually features you need to preserve.
-3. **Fix critical bugs immediately.** Don't wait for the full migration. Ship targeted fixes behind feature flags.
-4. **Migrate incrementally.** One caller at a time, verified against the standard. Resist the big-bang rewrite.
-5. **Watch for emergent interactions.** When you add flags and abstractions to handle edge cases, test them in combination, not just in isolation.
-6. **Track progress visibly.** A migration without a dashboard is a migration that stalls at 60%.
+1. **Treat it as access semantics, not as filtering.** The framing matters. "User filter" sounds like a utility. "Access semantics" sounds like something that needs a specification, review, and tests — because it does.
+2. **Write the behavioral standard before changing code.** Implementation-agnostic, covering all input combinations and edge cases. This is your source of truth and your review artifact.
+3. **Inventory the drift.** Compare every implementation against the standard. Rate severity. Some divergences are silent correctness bugs; some have security implications; some are features you need to preserve.
+4. **Fix security-relevant divergences immediately.** Don't wait for a full migration. Ship targeted fixes behind feature flags.
+5. **Converge incrementally.** One caller at a time, verified against the standard. Resist the big-bang rewrite — the risk profile of access semantics changes doesn't tolerate "we'll fix it if something breaks."
+6. **Test combinations, not features.** Access semantics interact with other system behaviors (caching, query optimization, feature flags). Test the intersections, not just each dimension in isolation.
