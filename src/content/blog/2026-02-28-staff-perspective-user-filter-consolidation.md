@@ -7,8 +7,6 @@ tags:
   - staff-engineering
 ---
 
-# Who Sees What: Why Access Semantics Can't Be Left to Convention
-
 Every multi-tenant system has a layer that answers a deceptively simple question: *given this user's identity and permissions, what data should they see?*
 
 This isn't a "filter." It's the access semantics of your product — the rules that define the boundary between what each customer can and can't interact with. When those rules are correct, nobody notices. When they drift, you get silent data leakage, invisible correctness bugs, and customer trust erosion that's hard to recover from.
