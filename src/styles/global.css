@@ -93,6 +93,29 @@ ul.clean li + li {
   font-size: 0.95rem;
 }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+th,
+td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+th {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+tr:nth-child(even) {
+  background: #fafbf9;
+}
+
 .badge {
   display: inline-block;
   margin-right: 0.4rem;
