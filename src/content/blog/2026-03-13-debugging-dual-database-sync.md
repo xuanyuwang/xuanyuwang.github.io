@@ -1,6 +1,6 @@
 ---
 title: "The Trap of Async Side Effects in Dual-Write Systems"
-description: Investigating compounding race conditions in a PostgreSQL + ClickHouse dual-write system
+description: Why fire-and-forget propagation between databases creates compounding bugs that intuitive fixes make worse
 date: 2026-03-13
 tags:
   - debugging
@@ -8,86 +8,53 @@ tags:
   - staff-engineering
 ---
 
-# Debugging a Dual-Database Sync Bug: Three Fixes, Two Race Conditions, and the Trap of Async Side Effects
+Many systems write to a primary database synchronously and then propagate changes to a secondary store — an analytics database, a search index, a cache — via async side effects. The pattern is simple, well-understood, and almost always ships with a subtle structural flaw: **the side effect captures a moment in time that may no longer be true when it executes.**
 
-When your system writes to two databases — a relational DB as source of truth and a columnar analytics store — "eventual consistency" can hide subtle, compounding bugs. This post walks through a real investigation where customer-reported data inconsistencies led to discovering not one but two race conditions, a failed first fix, and ultimately a principled approach to verification.
+This isn't a theoretical concern. It's a bug factory. And the intuitive fixes — "use a better timestamp," "retry on failure" — tend to address symptoms while leaving the structural problem intact. Worse, multiple bugs with the same root cause can produce identical symptoms, making it easy to declare victory after fixing only one.
 
-From a staff engineering perspective, the interesting parts aren't the fixes themselves (which are small) — they're the investigation methodology, the layered nature of the bugs, and the discipline of validating assumptions against production data.
+This post uses a real dual-write system (PostgreSQL + ClickHouse) to illustrate why async side effects are structurally dangerous, why the first fix usually fails, and what a principled approach looks like.
 
-## The architecture
+## The structural problem
 
-The system has a simple dual-write pattern:
+The pattern looks like this:
 
-1. **API request** arrives (e.g., update a record, submit a record)
-2. **Synchronous work**: write to PostgreSQL inside a transaction
-3. **Asynchronous work**: fire-and-forget goroutine updates ClickHouse (columnar analytics DB)
+1. API request arrives
+2. Write to the primary database (PostgreSQL) inside a transaction
+3. After commit, fire an async goroutine that reads the record and writes it to the secondary store (ClickHouse)
 
-ClickHouse uses [ReplacingMergeTree](https://clickhouse.com/docs/en/engines/table-engines/mergetree-family/replacingmergetree), which deduplicates rows by keeping the one with the highest `version` column. In our case, `version` = `update_time`, set to `time.Now()` at the moment of the ClickHouse write.
+The secondary store uses a versioning mechanism (ClickHouse's ReplacingMergeTree with `update_time`) to handle duplicate writes — it keeps the row with the highest version. In this system, `update_time` was set to `time.Now()` at the moment of the ClickHouse write.
 
-PostgreSQL is the source of truth. ClickHouse powers dashboards and analytics. The expectation: they should agree.
+Two properties of this pattern create the trap:
 
-## The symptom
+**The async work races with other operations.** If two API calls happen in quick succession (Update then Submit), their async goroutines may complete in reverse order. The goroutine that started first can finish last — and because it captured or read data before the second operation committed, it writes *stale* data with a *later* timestamp. The versioning mechanism keeps the stale row because it has the higher version.
 
-Customers reported that analytics dashboards showed incorrect data — records appeared unsubmitted or had stale scores, even though the primary application showed the correct state.
+**The side effect captures a snapshot, not a reference.** The async work typically captures the record object in a closure or reads from the database before the next operation's transaction commits. Either way, it operates on data that has already been superseded. This is the fundamental issue: the side effect's view of reality is detached from the primary database's current state.
 
-## Bug #1: Async work runs out of order
+## Why intuitive fixes fail
 
-The system has two related APIs that users call in sequence:
+When this bug surfaced — customers seeing stale data in analytics dashboards while the primary application showed correct state — the first instinct was to fix the versioning: use the primary database's `updated_at` instead of `time.Now()` as the ClickHouse version column.
 
-- **UpdateRecord**: saves scores/data to the record
-- **SubmitRecord**: marks the record as finalized (sets `submitted_at`, `submitter_id`)
+The logic seemed sound: if Submit's `updated_at` is always later than Update's, the version ordering would match the data ordering. But this fix failed because **the async work captured the record object in a closure**. The goroutine used the stale snapshot from before the transaction — including the stale `updated_at`. Changing the timestamp source didn't help because the data itself was stale.
 
-Both APIs follow the same sync-then-async pattern. The problem: async goroutines don't finish in the order they were started.
+This is the pattern to watch for: **when the root cause is stale data, no amount of metadata correction fixes the problem.** The fix addressed a downstream symptom (wrong version ordering) while the upstream problem (reading superseded state) persisted.
 
-```
-Timeline (failure scenario):
-────────────────────────────────────────────────────────
-Time    UpdateRecord                SubmitRecord
-────────────────────────────────────────────────────────
-T1      API called
-T2      PG transaction commits
-T3      Async goroutine starts
-T4      Reads PG (submitted_at=NULL)
-T5                                  API called
-T6                                  PG transaction commits
-T7                                  Async goroutine starts
-T8                                  Reads PG (submitted_at=correct)
-T9                                  Writes to CH (update_time=T9)
-T10     Writes to CH (update_time=T10, stale data!)
-        ^ T10 > T9, so ReplacingMergeTree keeps stale row
-────────────────────────────────────────────────────────
-```
+## The real fix: never trust the closure
 
-The Update goroutine reads from PG *before* Submit's transaction commits (so it sees no submission), but writes to ClickHouse *after* Submit's goroutine finishes (so its `time.Now()` is later). ReplacingMergeTree keeps the row with the higher `update_time` — the stale one.
+The correct fix had two parts:
 
-### Fix attempt 1: Use PG `updated_at` as the ClickHouse version (failed)
-
-The intuition: if we use PG's `updated_at` as ClickHouse's `update_time` instead of `time.Now()`, the ordering would be correct because Submit's `updated_at` is always later than Update's.
-
-This failed because **the async work captured the record object in a closure**. When the goroutine ran, it used the stale snapshot from before the transaction — including the stale `updated_at`. Changing the timestamp source didn't help because the data itself was stale.
-
-**Lesson: The root cause was reading stale data, not the timestamp source.** The failed fix addressed a symptom while the real problem persisted.
-
-### Fix 2: Atomic transactions + re-read from DB (merged)
-
-The real fix had two parts:
-
-1. **Move analytics-schema writes inside the transaction**, so they're committed atomically with the primary data
-2. **Make async work re-read from the database** instead of using closure-captured data
+1. **Move secondary-store schema writes inside the primary transaction**, so they commit atomically with the primary data
+2. **Make the async work re-read from the primary database** instead of using closure-captured state
 
 ```go
 func UpdateRecordAtomic(...) {
     var asyncWork func()
 
     db.Transaction(func(tx) {
-        // Primary write
         UpdateRecordInDB(tx, ...)
-        // Analytics schema write (now inside transaction)
         WriteAnalyticsData(tx, ...)
 
-        // Prepare async work — will execute AFTER commit
         asyncWork = func() {
-            // Re-read from DB (write replica), not closure
+            // Re-read from DB, not closure
             record := ReadFromDB(recordID)
             WriteToClickHouse(record)
         }
@@ -97,100 +64,52 @@ func UpdateRecordAtomic(...) {
 }
 ```
 
-This ensures the ClickHouse write always reflects the latest committed state. Even if goroutines run out of order, both re-read from PG and see the same committed data.
+Now even if goroutines run out of order, both re-read from the primary database and see the same committed state. The side effect is no longer detached from reality.
 
-## Bug #2: PostgreSQL lost update (discovered during testing)
+## Identical symptoms, different bugs
 
-While load-testing Fix 2, a second race condition emerged — this time in PostgreSQL itself.
+While load-testing the fix above, a second race condition emerged — this time in the primary database itself.
 
-The ORM used `Save()` which persists the **entire struct**, not just modified fields. When Update and Submit run concurrently:
+The ORM's `Save()` persisted the entire struct, not just modified fields. When Update and Submit ran concurrently, Update could overwrite Submit's changes:
 
 ```
-T1  UpdateRecord: reads record (submitted_at=NULL)
-T2  SubmitRecord: reads record (submitted_at=NULL)
-T3  SubmitRecord: sets submitted_at=NOW(), saves entire struct
-T4  UpdateRecord: modifies scores, saves entire struct
-    ^ Overwrites submitted_at back to NULL!
+T1  Update: reads record (submitted_at=NULL)
+T2  Submit: reads record (submitted_at=NULL)
+T3  Submit: sets submitted_at=NOW(), saves entire struct
+T4  Update: modifies scores, saves entire struct
+    ^ Overwrites submitted_at back to NULL
 ```
 
-**Fix 3: Partial updates.** Use the ORM's field-exclusion mechanism (`Omit` in GORM) so UpdateRecord never writes to `submitted_at` or `submitter_id`:
+This is a classic lost-update problem. The fix was partial updates — using the ORM's field-exclusion mechanism so each operation only writes the fields it owns.
 
-```go
-tx.Model(record).Omit("submitted_at", "submitter_id").Save(record)
-```
+The critical insight: **this bug produced the exact same symptom as the async ordering bug** (missing submission data in analytics). If we'd stopped after the first fix, the intermittent failures would have continued and we'd have doubted whether the async fix was correct. Load testing with high concurrency was what separated the two bugs into distinguishable failure modes.
 
-This is a classic lost-update problem, but it was masked by the async ClickHouse bug — both bugs produced the same symptom (missing submission data), making it easy to assume a single root cause.
+## Verifying the fix: quantify the residual
 
-## Validation: load testing and production verification
-
-### Load testing
-
-Built a custom load test tool that:
-1. Creates a record
-2. Calls Update and Submit with configurable delay between them
-3. Waits for ClickHouse convergence
-4. Compares PG vs CH data
-
-Results with both fixes applied:
-
-| API delay | Success rate |
-|-----------|-------------|
-| 10ms      | ~80%        |
-| 50ms      | 94%         |
-| 100ms+    | ~100%       |
-
-The ~100ms threshold represents the time for the Update goroutine's async work to complete (DB re-read + ClickHouse write). Beyond that, Submit's goroutine always writes last and wins.
-
-### Production verification
-
-After gradual rollout behind a feature flag, verified on production across ~3,000 submitted records over 39 days:
+After deploying both fixes behind a feature flag and rolling out gradually, production verification across ~3,000 records over 39 days showed:
 
 | Metric | Result |
 |--------|--------|
-| Score mismatches (PG vs CH) | **0** |
+| Score mismatches (primary vs. analytics) | **0** |
 | Submitter mismatches | **0** |
-| CH missing submission state | 26 (0.87%) |
+| Analytics missing submission state | 26 (0.87%) |
 
-The 0.87% residual: users who clicked Save then Submit in quick succession in the UI, triggering the async race. All 26 had correct data in PostgreSQL — only the ClickHouse analytics copy was stale. Acceptable for the use case.
+The 0.87% residual came from users clicking Save then Submit in rapid succession in the UI — fast enough that the first goroutine's re-read still happened before the second transaction committed. All 26 had correct data in the primary database. The analytics copy was stale but bounded by human interaction speed.
 
-### Closing the loop
-
-An initial assumption was that the 0.87% residual came from automated batch processing (which would call Update + Submit programmatically with minimal delay). Code review disproved this: the batch code path writes to PG and ClickHouse synchronously in a single function — no async goroutines, no race possible. The actual trigger was human users interacting quickly in the UI.
-
-This correction matters: if the cause were automated, we'd need to add delays to the batch pipeline. Since it's human UI interaction, the ~1% rate is inherently bounded and acceptable.
-
-## Staff-level reflections
-
-### 1. Investigation beats intuition
-
-The first fix failed because it was based on an intuitive model ("the timestamp is wrong") rather than a precise understanding of data flow ("the closure captures stale state"). Tracing the exact sequence of reads and writes — which goroutine reads what, when — was what led to the correct fix.
-
-### 2. Multiple bugs can produce identical symptoms
-
-The async ordering bug and the PostgreSQL lost-update bug both caused the same observable symptom: missing submission data. If we'd stopped after fixing one, the other would have continued causing intermittent failures. Load testing with high concurrency was essential for separating the two.
-
-### 3. `time.Now()` as a version column is a design smell
-
-Using wall-clock time as the ReplacingMergeTree version means **write order determines truth, not data order**. A goroutine that reads stale data but writes late will "win." A more robust design would use a monotonic version derived from the source-of-truth database (e.g., a sequence number or the PG transaction's `updated_at`). We considered this but it requires ensuring the async work always reads fresh data — which is exactly what Fix 2 addresses. The two approaches are complementary.
-
-### 4. Feature flags and staged rollout pay for themselves
-
-The fix touched four API code paths. Rolling out behind a feature flag let us:
-- Enable on staging first, run load tests
-- Enable on one production customer, verify with real traffic
-- Roll out globally only after production data confirmed correctness
-- Eventually remove the flag and 740 lines of legacy code with confidence
-
-### 5. Verify your assumptions against the actual code path
-
-"92% of affected records came from automated scoring" sounded like a strong signal — until we read the code and discovered that (a) the enum value we assumed meant "auto-scored" actually meant "submitted from a specific UI page," and (b) the automated scoring code path doesn't use the affected APIs at all. Production data analysis is powerful, but you must ground it in the actual code to avoid misleading conclusions.
+An initial assumption was that the residual came from automated batch processing (which would call both APIs programmatically with minimal delay). Code review disproved this: the batch code path writes synchronously to both stores in a single function — no async goroutines, no race possible. **Production data analysis is powerful, but you must ground it in the actual code to avoid misleading conclusions.**
 
 ## The general pattern
 
-If your system does sync-write-to-DB then async-side-effect-to-another-store:
+Async side effects in dual-write systems are structurally prone to three compounding problems:
 
-1. **Never capture mutable state in async closures.** Re-read from the source of truth.
-2. **Use partial updates.** Full-struct saves (`Save()`) are lost-update bugs waiting to happen.
-3. **Your version column strategy matters.** `time.Now()` at write time means write order = version order, which may not reflect data order.
-4. **Build verification tooling early.** A tool that compares the two stores for a single record is invaluable for both debugging and production validation.
-5. **Document the acceptable residual.** After fixing what you can, quantify and document what remains. "0.87% of records have stale analytics data under specific UI interaction patterns" is a much better state than "sometimes the data is wrong."
+1. **Stale closures.** Async work that captures state at dispatch time operates on a snapshot that may be superseded by the time it executes. The fix: never trust captured state. Re-read from the source of truth.
+
+2. **Version inversion.** When the secondary store uses write-time metadata (like `time.Now()`) for ordering, write order determines truth — not data order. A late-arriving goroutine with stale data "wins" over an earlier goroutine with correct data. The fix: derive versions from the source of truth, not from the writer.
+
+3. **Lost updates in the primary.** Full-struct persistence (`Save()` in ORMs) is a lost-update bug waiting for concurrent writes. This bug often hides behind the async ordering bug because both produce the same symptoms. The fix: partial updates — each operation writes only the fields it owns.
+
+These bugs compound because they produce identical symptoms. The discipline required is:
+
+- **Don't stop at the first fix.** Load-test under concurrency to surface overlapping failure modes.
+- **Build comparison tooling early.** A tool that diffs the primary and secondary store for a single record is invaluable for both debugging and production validation.
+- **Quantify and document the residual.** After fixing what you can, measure what remains. "0.87% of records have stale analytics data under specific UI interaction patterns" is a known, bounded risk. "Sometimes the data is wrong" is not.
