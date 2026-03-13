@@ -19,7 +19,7 @@ This post uses a real case (reference data crossing database boundaries) to illu
 
 The specific problem: an analytics system passed user IDs from PostgreSQL to ClickHouse via `WHERE user_id IN (...)` clauses in SQL text. A customer with 5,000+ agents generated a query that exceeded ClickHouse's 1MB query text limit.
 
-The immediate fix: a `ShouldQueryAllUsers` flag — when the filter resolves to "everyone," skip the WHERE clause entirely. Shipped in a day. Solved the triggering case.
+The immediate fixes came in two rounds. First, increase ClickHouse's `max_query_size` setting to buy time. Then, a `ShouldQueryAllUsers` flag — when the filter resolves to "everyone," skip the WHERE clause entirely. Both shipped quickly. Both solved the triggering case.
 
 But three scenarios remained unaddressed:
 
