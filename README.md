@@ -3,7 +3,7 @@
 Simple personal site with:
 
 - home page
-- app links (`/apps/`, `/qimen/`)
+- apps section (`/apps/`) with app routes (`/qimen/`, `/menu/`)
 - markdown blog (`/blog/`)
 - optional Typst export pipeline
 
@@ -14,16 +14,22 @@ Simple personal site with:
 ├── public/
 │   ├── CNAME
 │   └── typst/            # generated Typst PDFs
-├── qimen/                # existing static web app
 ├── scripts/
 │   ├── build-typst.sh
 │   └── import-blogs.sh
 ├── src/
+│   ├── apps/             # shared app metadata
 │   ├── content/blog/     # blog markdown files
 │   ├── layouts/
-│   └── pages/
+│   └── pages/            # Astro routes for blog, apps, and app pages
 └── typst/                # source .typ files
 ```
+
+## Sections
+
+- Blog: `/blog/`, backed by Markdown files in `src/content/blog/`
+- Apps: `/apps/`, backed by shared app metadata in `src/apps/apps.ts`
+- App routes: `/qimen/` and `/menu/`, implemented as Astro pages in `src/pages/`
 
 ## Commands
 

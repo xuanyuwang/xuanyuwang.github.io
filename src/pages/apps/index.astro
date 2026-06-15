@@ -1,0 +1,22 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { apps } from "../../apps/apps";
+---
+
+<BaseLayout title="Apps | Xuanyu Wang" description="Personal web apps">
+  <h1>Apps</h1>
+  <p class="meta">Small tools and experiments hosted on this site.</p>
+
+  <section class="panel">
+    <ul class="clean">
+      {
+        apps.map((app) => (
+          <li>
+            <a href={app.href}>{app.title}</a>
+            <div class="meta">{app.description}</div>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>

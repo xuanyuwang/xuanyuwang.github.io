@@ -2,6 +2,7 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
 import type { CollectionEntry } from "astro:content";
+import { apps } from "../apps/apps";
 
 type BlogEntry = CollectionEntry<"blog">;
 
@@ -33,8 +34,14 @@ const recentPosts = allPosts
   <section class="panel">
     <h2>Apps</h2>
     <ul class="clean">
-      <li><a href="/qimen/">奇门遁甲起盘</a></li>
-      <li><a href="/menu/">家庭点餐</a></li>
+      {
+        apps.map((app) => (
+          <li>
+            <a href={app.href}>{app.title}</a>
+            <div class="meta">{app.description}</div>
+          </li>
+        ))
+      }
     </ul>
   </section>
 
