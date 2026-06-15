@@ -1,0 +1,438 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const categories = [
+  {
+    name: "主菜",
+    items: ["红烧肉", "宫保鸡丁", "番茄炒蛋", "清蒸鱼"],
+  },
+  {
+    name: "蔬菜",
+    items: ["蒜蓉青菜", "干煸四季豆", "地三鲜"],
+  },
+  {
+    name: "主食",
+    items: ["米饭", "葱油面", "饺子"],
+  },
+  {
+    name: "汤",
+    items: ["紫菜蛋花汤", "排骨玉米汤"],
+  },
+];
+---
+
+<BaseLayout title="家庭点餐 | Xuanyu Wang" description="Simple family menu and order page">
+  <h1>家庭点餐</h1>
+  <p class="meta">选择今天要吃的菜，调整数量后生成订单。</p>
+
+  <div class="order-layout" data-order-app>
+    <section class="menu-board" aria-label="菜单">
+      {
+        categories.map((category) => (
+          <section class="panel menu-category">
+            <h2>{category.name}</h2>
+            <div class="menu-items">
+              {
+                category.items.map((item) => (
+                  <label class="menu-item">
+                    <input type="checkbox" value={item} data-menu-item />
+                    <span>{item}</span>
+                  </label>
+                ))
+              }
+            </div>
+          </section>
+        ))
+      }
+    </section>
+
+    <aside class="panel cart-panel" aria-label="购物车">
+      <div class="cart-heading">
+        <h2>已选</h2>
+        <p class="meta" data-progress>0 道菜，0 份</p>
+      </div>
+
+      <div class="cart-list" data-cart-list>
+        <p class="empty-state">还没有选择菜品。</p>
+      </div>
+
+      <div class="order-actions">
+        <button type="button" data-generate-order>生成订单</button>
+        <button type="button" class="secondary" data-clear-order>清空</button>
+      </div>
+    </aside>
+  </div>
+
+  <section class="panel order-summary" data-summary-panel hidden>
+    <h2>订单</h2>
+    <div data-order-summary></div>
+    <div class="summary-actions" data-summary-actions hidden>
+      <button type="button" data-share-image>分享图片</button>
+      <button type="button" class="secondary" data-download-image>下载图片</button>
+    </div>
+    <p class="meta" data-share-status></p>
+  </section>
+
+  <style>
+    .order-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+      gap: 1rem;
+      align-items: start;
+      margin-top: 1rem;
+    }
+
+    .menu-board {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .menu-category {
+      margin: 0;
+    }
+
+    .menu-category h2,
+    .cart-heading h2,
+    .order-summary h2 {
+      margin-top: 0;
+    }
+
+    .menu-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.7rem;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.55rem 0.7rem;
+      background: #fafbf9;
+      cursor: pointer;
+    }
+
+    .menu-item:has(input:checked) {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      font-weight: 600;
+    }
+
+    .menu-item input {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+    }
+
+    .cart-panel {
+      position: sticky;
+      top: 4.5rem;
+      margin: 0;
+    }
+
+    .cart-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: baseline;
+    }
+
+    .cart-list {
+      display: grid;
+      gap: 0.65rem;
+      margin: 1rem 0;
+    }
+
+    .cart-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.65rem;
+    }
+
+    .cart-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .quantity-control {
+      display: grid;
+      grid-template-columns: 2rem 2rem 2rem;
+      align-items: center;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .quantity-control button,
+    .order-actions button,
+    .summary-actions button {
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .quantity-control button {
+      width: 2rem;
+      height: 2rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .quantity-control span {
+      min-width: 2rem;
+    }
+
+    .order-actions,
+    .summary-actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .summary-actions {
+      margin-top: 1rem;
+    }
+
+    .order-actions button,
+    .summary-actions button {
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      padding: 0.55rem 0.85rem;
+      font-weight: 700;
+    }
+
+    .order-actions .secondary,
+    .summary-actions .secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+    }
+
+    .empty-state {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .order-summary[hidden] {
+      display: none;
+    }
+
+    .summary-actions[hidden] {
+      display: none;
+    }
+
+    .order-summary ul {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 760px) {
+      .order-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .cart-panel {
+        position: static;
+      }
+    }
+  </style>
+
+  <script>
+    const app = document.querySelector("[data-order-app]");
+    const checkboxes = Array.from(document.querySelectorAll("[data-menu-item]"));
+    const cartList = document.querySelector("[data-cart-list]");
+    const progress = document.querySelector("[data-progress]");
+    const summaryPanel = document.querySelector("[data-summary-panel]");
+    const orderSummary = document.querySelector("[data-order-summary]");
+    const generateButton = document.querySelector("[data-generate-order]");
+    const clearButton = document.querySelector("[data-clear-order]");
+    const summaryActions = document.querySelector("[data-summary-actions]");
+    const shareButton = document.querySelector("[data-share-image]");
+    const downloadButton = document.querySelector("[data-download-image]");
+    const shareStatus = document.querySelector("[data-share-status]");
+    const cart = new Map();
+
+    const getTotals = () => {
+      const quantities = Array.from(cart.values());
+      return {
+        itemCount: quantities.length,
+        portionCount: quantities.reduce((sum, quantity) => sum + quantity, 0),
+      };
+    };
+
+    const setChecked = (item, checked) => {
+      const checkbox = checkboxes.find((input) => input.value === item);
+      if (checkbox) checkbox.checked = checked;
+    };
+
+    const updateSummary = () => {
+      summaryPanel.hidden = true;
+      orderSummary.innerHTML = "";
+      summaryActions.hidden = true;
+      shareStatus.textContent = "";
+    };
+
+    const getOrderLines = () => Array.from(cart.entries()).map(([item, quantity]) => `${item} x ${quantity}`);
+
+    const createOrderImageBlob = () =>
+      new Promise((resolve) => {
+        const lines = getOrderLines();
+        const width = 900;
+        const lineHeight = 54;
+        const height = 220 + lines.length * lineHeight;
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+
+        context.fillStyle = "#fafbf9";
+        context.fillRect(0, 0, width, height);
+
+        context.fillStyle = "#ffffff";
+        context.strokeStyle = "#d7ddd4";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.roundRect(40, 40, width - 80, height - 80, 22);
+        context.fill();
+        context.stroke();
+
+        context.fillStyle = "#1f2a1f";
+        context.font = '700 44px "PingFang SC", "Microsoft YaHei", sans-serif';
+        context.fillText("家庭订单", 84, 112);
+
+        const { itemCount, portionCount } = getTotals();
+        context.fillStyle = "#5b645c";
+        context.font = '28px "PingFang SC", "Microsoft YaHei", sans-serif';
+        context.fillText(`${itemCount} 道菜，${portionCount} 份`, 84, 158);
+
+        context.fillStyle = "#1f2a1f";
+        context.font = '32px "PingFang SC", "Microsoft YaHei", sans-serif';
+        lines.forEach((line, index) => {
+          context.fillText(line, 84, 230 + index * lineHeight);
+        });
+
+        canvas.toBlob(resolve, "image/png");
+      });
+
+    const downloadBlob = (blob) => {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "family-order.png";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    };
+
+    const shareOrderImage = async () => {
+      const blob = await createOrderImageBlob();
+      const file = new File([blob], "family-order.png", { type: "image/png" });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "家庭订单" });
+        shareStatus.textContent = "图片已打开分享。";
+      } else {
+        downloadBlob(blob);
+        shareStatus.textContent = "当前浏览器不支持直接分享，已下载图片。";
+      }
+    };
+
+    const renderCart = () => {
+      const { itemCount, portionCount } = getTotals();
+      progress.textContent = `${itemCount} 道菜，${portionCount} 份`;
+
+      if (cart.size === 0) {
+        cartList.innerHTML = '<p class="empty-state">还没有选择菜品。</p>';
+        updateSummary();
+        return;
+      }
+
+      cartList.innerHTML = Array.from(cart.entries())
+        .map(
+          ([item, quantity]) => `
+            <div class="cart-row">
+              <span>${item}</span>
+              <div class="quantity-control" aria-label="${item} 数量">
+                <button type="button" data-change-quantity="${item}" data-step="-1">-</button>
+                <span>${quantity}</span>
+                <button type="button" data-change-quantity="${item}" data-step="1">+</button>
+              </div>
+            </div>
+          `,
+        )
+        .join("");
+    };
+
+    checkboxes.forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          cart.set(checkbox.value, 1);
+        } else {
+          cart.delete(checkbox.value);
+        }
+        updateSummary();
+        renderCart();
+      });
+    });
+
+    app.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-change-quantity]");
+      if (!button) return;
+
+      const item = button.dataset.changeQuantity;
+      const nextQuantity = (cart.get(item) || 0) + Number(button.dataset.step);
+
+      if (nextQuantity <= 0) {
+        cart.delete(item);
+        setChecked(item, false);
+      } else {
+        cart.set(item, nextQuantity);
+      }
+
+      updateSummary();
+      renderCart();
+    });
+
+    generateButton.addEventListener("click", () => {
+      if (cart.size === 0) {
+        orderSummary.innerHTML = '<p class="empty-state">还没有选择菜品。</p>';
+        summaryActions.hidden = true;
+      } else {
+        orderSummary.innerHTML = `
+          <ul>
+            ${getOrderLines().map((line) => `<li>${line}</li>`).join("")}
+          </ul>
+        `;
+        summaryActions.hidden = false;
+      }
+      shareStatus.textContent = "";
+      summaryPanel.hidden = false;
+    });
+
+    shareButton.addEventListener("click", async () => {
+      await shareOrderImage();
+    });
+
+    downloadButton.addEventListener("click", async () => {
+      const blob = await createOrderImageBlob();
+      downloadBlob(blob);
+      shareStatus.textContent = "图片已下载。";
+    });
+
+    clearButton.addEventListener("click", () => {
+      cart.clear();
+      checkboxes.forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+      updateSummary();
+      renderCart();
+    });
+  </script>
+</BaseLayout>
