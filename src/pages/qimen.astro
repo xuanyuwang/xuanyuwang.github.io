@@ -309,7 +309,7 @@ const description = "QiMen DunJia chart calculator.";
           <option value="Asia/Shanghai">Asia/Shanghai</option>
           <option value="Asia/Hong_Kong">Asia/Hong_Kong</option>
           <option value="Asia/Tokyo">Asia/Tokyo</option>
-          <option value="America/New_York">America/New_York</option>
+          <option value="America/New_York" selected>America/New_York (Eastern Time)</option>
           <option value="America/Los_Angeles">America/Los_Angeles</option>
           <option value="Europe/London">Europe/London</option>
           <option value="UTC">UTC</option>
@@ -372,5 +372,12 @@ ${k5.Gongs}:`);for(let n of this.Gongs){let u=n.TianGan.join(", ")||"\u65E0",r=n
     `}return t+="</div>",t}var h1=null;function Z5(o,e){try{let t=d5(o,e),n=t0.fromYmdHms(t.year,t.month,t.day,t.hour,t.minute,0),u=new F1;u.calculateShiChen(n),u.calculateJieQi(n),u.calculateYinYang(),u.calculateNianZhu(n),u.calculateYueZhu(n),u.calculateRiZhu(n),u.calculateShiZhu(n),u.calculateYuan(),u.calculateJuShu(),u.calculateXunShou(),u.calculateKongWang(),u.arrangeDiPan(),u.calculateZhiFu(),u.calculateZhiShiMen(),u.arrangeJiuXing(),u.arrangeBaShen(),u.arrangeTianPan(),u.arrangeBaMen(),u.jiGong(),h1=u;let r=String(t.year).padStart(4,"0"),i=String(t.month).padStart(2,"0"),s=String(t.day).padStart(2,"0"),F=String(t.hour).padStart(2,"0"),C=String(t.minute).padStart(2,"0"),g=`${r}-${i}-${s}T${F}:${C}`;u.Timestamp=g,document.getElementById("timestamp").textContent=g,document.getElementById("basicFields").innerHTML=H3(u),document.getElementById("gongGrid").innerHTML=v3(u),document.getElementById("copyButton").disabled=!1,document.getElementById("error").textContent=""}catch(t){document.getElementById("error").textContent=`\u9519\u8BEF: ${t.message}`,console.error(t),h1=null,document.getElementById("copyButton").disabled=!0}}function X3(){if(!h1){document.getElementById("error").textContent="\u9519\u8BEF: \u6CA1\u6709\u53EF\u590D\u5236\u7684\u6570\u636E (No data to copy)";return}let o=h1.toString();navigator.clipboard.writeText(o).then(()=>{let e=document.getElementById("copyButton"),t=e.textContent;e.textContent="\u5DF2\u590D\u5236! (Copied!)",e.style.background="#28a745",setTimeout(()=>{e.textContent=t,e.style.background=""},2e3)}).catch(e=>{let t=document.createElement("textarea");t.value=o,t.style.position="fixed",t.style.opacity="0",document.body.appendChild(t),t.select();try{document.execCommand("copy");let n=document.getElementById("copyButton"),u=n.textContent;n.textContent="\u5DF2\u590D\u5236! (Copied!)",n.style.background="#28a745",setTimeout(()=>{n.textContent=u,n.style.background=""},2e3)}catch(n){document.getElementById("error").textContent=`\u590D\u5236\u5931\u8D25 (Copy failed): ${n.message}`}document.body.removeChild(t)})}window.calculatePan=Z5;window.copyToClipboard=X3;window.addEventListener("DOMContentLoaded",()=>{let o=new Date,e=document.getElementById("datetimeInput"),t=document.getElementById("timezoneSelect"),n=Intl.DateTimeFormat().resolvedOptions().timeZone;Array.from(t.options).map(g=>g.value).includes(n)?t.value=n:t.value="Asia/Shanghai";let r=o.getFullYear(),i=String(o.getMonth()+1).padStart(2,"0"),s=String(o.getDate()).padStart(2,"0"),F=String(o.getHours()).padStart(2,"0"),C=String(o.getMinutes()).padStart(2,"0");e.value=`${r}-${i}-${s}T${F}:${C}`,Z5(o,t.value)});})();
 
 </script>
+  <script is:inline>
+    window.addEventListener('DOMContentLoaded', () => {
+      const timezone = 'America/New_York';
+      document.getElementById('timezoneSelect').value = timezone;
+      window.calculatePan(new Date(), timezone);
+    });
+  </script>
 </body>
 </html>
