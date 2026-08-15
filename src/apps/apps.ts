@@ -6,6 +6,11 @@ export interface AppLink {
 
 export const apps: AppLink[] = [
   {
+    title: "Cozy World",
+    description: "A tiny, peaceful world in an autumn forest",
+    href: "/cozy-world/"
+  },
+  {
     title: "奇门遁甲起盘",
     description: "QiMen DunJia chart calculator.",
     href: "/qimen/",
