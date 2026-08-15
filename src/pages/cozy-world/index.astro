@@ -1,0 +1,60 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const title = "Cozy World";
+const description = "A tiny, peaceful world in an autumn forest.";
+---
+
+<BaseLayout title={`${title} | Xuanyu Wang`} description={description}>
+  <section class="game-intro">
+    <p class="eyebrow">A tiny autumn world</p>
+    <h1>{title}</h1>
+    <p>{description}</p>
+
+    <div class="game-placeholder" role="img" aria-label="Cozy World game area">
+      <p>The clearing is taking shape.</p>
+    </div>
+
+    <p class="meta">First playable version in development.</p>
+  </section>
+
+  <style>
+    .game-intro {
+      padding-bottom: 3rem;
+    }
+
+    .eyebrow {
+      margin-top: 2rem;
+      color: #9a512d;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .game-intro h1 {
+      margin: 0;
+    }
+
+    .game-placeholder {
+      display: grid;
+      min-height: 420px;
+      margin-top: 1.5rem;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid #7b4c2c;
+      border-radius: 16px;
+      color: #fff2d2;
+      background:
+        radial-gradient(circle at 75% 25%, #e9b45e 0 4%, transparent 5%),
+        linear-gradient(#657959 0 45%, #875b36 45% 48%, #516946 48%);
+      box-shadow: 0 20px 50px rgb(62 40 23 / 18%);
+    }
+
+    .game-placeholder p {
+      padding: 0.7rem 1rem;
+      border-radius: 999px;
+      background: rgb(35 45 31 / 70%);
+    }
+  </style>
+</BaseLayout>
