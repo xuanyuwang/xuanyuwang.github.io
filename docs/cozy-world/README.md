@@ -1,5 +1,9 @@
 # Cozy World
 
+For the current implementation status and the next development milestone, see
+[`HANDOFF.md`](./HANDOFF.md). For technical boundaries and decisions, see
+[`ARCHITECTURE.md`](./ARCHITECTURE.md).
+
 ## Vision
 
 Cozy World is a tiny, peaceful browser game set in an autumn clearing.
