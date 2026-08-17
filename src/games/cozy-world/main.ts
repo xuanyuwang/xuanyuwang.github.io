@@ -5,8 +5,22 @@ const WORLD_HEIGHT = 800;
 const cottageX = WORLD_WIDTH / 2;
 const cottageY = WORLD_HEIGHT / 2;
 const GAME_CONTAINER_ID = "cozy-world-game";
+const PLAYER_SPEED = 180;
+const PLAYER_RADIUS = 18;
+
+interface MovementKeys {
+  up: Phaser.Input.Keyboard.Key;
+  down: Phaser.Input.Keyboard.Key;
+  left: Phaser.Input.Keyboard.Key;
+  right: Phaser.Input.Keyboard.Key;
+}
 
 class ClearingScene extends Phaser.Scene {
+  private player!: Phaser.GameObjects.Arc;
+  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private movementKeys!: MovementKeys;
+  private movementIntent = new Phaser.Math.Vector2();
+
   constructor() {
     super("clearing");
   }
@@ -120,6 +134,42 @@ class ClearingScene extends Phaser.Scene {
       0x68452f,
     );
 
+    // Create the temporary player appearance.
+    //
+    // The primitive circle is intentionally simple. It lets us validate movement,
+    // physics, and camera behavior before introducing sprite assets.
+    this.player = this.add.circle(
+      cottageX,
+      cottageY + 250,
+      PLAYER_RADIUS,
+      0xf4d6a0,
+    );
+
+    // Give the visible circle an Arcade Physics body.
+    this.physics.add.existing(this.player);
+
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+
+    // Stop the physics body at the configured world boundary.
+    playerBody.setCollideWorldBounds(true);
+
+    const keyboard = this.input.keyboard;
+
+    if (!keyboard) {
+      throw new Error("Keyboard input is unavailable");
+    }
+
+    // Arrow-key input provided by Phaser.
+    this.cursors = keyboard.createCursorKeys();
+
+    // WASD input represented with the same directional structure.
+    this.movementKeys = {
+      up: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+      down: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+      left: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+      right: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+    };
+
     // Draw a screen-level game label.
     //
     // setScrollFactor(0) keeps the text attached to the viewport instead of
@@ -158,10 +208,76 @@ class ClearingScene extends Phaser.Scene {
       WORLD_HEIGHT,
     );
 
-    // Begin with the camera focused on the center of the clearing.
-    this.cameras.main.centerOn(
-      WORLD_WIDTH / 2,
-      WORLD_HEIGHT / 2,
+    // Follow the player with gentle interpolation rather than snapping the camera
+    // to every small movement immediately.
+    this.cameras.main.startFollow(
+      this.player,
+      true,
+      0.12,
+      0.12,
+    );
+  }
+  private readMovementIntent(): Phaser.Math.Vector2 {
+    const isLeftPressed =
+      this.cursors.left.isDown ||
+      this.movementKeys.left.isDown;
+
+    const isRightPressed =
+      this.cursors.right.isDown ||
+      this.movementKeys.right.isDown;
+
+    const isUpPressed =
+      this.cursors.up.isDown ||
+      this.movementKeys.up.isDown;
+
+    const isDownPressed =
+      this.cursors.down.isDown ||
+      this.movementKeys.down.isDown;
+
+    let horizontalDirection = 0;
+    let verticalDirection = 0;
+
+    // Move horizontally only when exactly one horizontal direction is pressed.
+    //
+    // Pressing left and right together cancels horizontal movement.
+    if (isLeftPressed && !isRightPressed) {
+      horizontalDirection = -1;
+    } else if (isRightPressed && !isLeftPressed) {
+      horizontalDirection = 1;
+    }
+
+    // Move vertically only when exactly one vertical direction is pressed.
+    //
+    // In screen coordinates, negative y is upward and positive y is downward.
+    // Pressing up and down together cancels vertical movement.
+    if (isUpPressed && !isDownPressed) {
+      verticalDirection = -1;
+    } else if (isDownPressed && !isUpPressed) {
+      verticalDirection = 1;
+    }
+
+    this.movementIntent.set(
+      horizontalDirection,
+      verticalDirection,
+    );
+
+    // Normalize diagonal directions so moving diagonally is not faster than
+    // moving horizontally or vertically.
+    if (this.movementIntent.lengthSq() > 0) {
+      this.movementIntent.normalize();
+    }
+
+    return this.movementIntent;
+  }
+
+  update() {
+    const movementIntent = this.readMovementIntent();
+    const playerBody =
+      this.player.body as Phaser.Physics.Arcade.Body;
+
+    playerBody.setVelocity(
+      movementIntent.x * PLAYER_SPEED,
+      movementIntent.y * PLAYER_SPEED,
     );
   }
 }
