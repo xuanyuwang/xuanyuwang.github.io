@@ -7,6 +7,11 @@ const cottageY = WORLD_HEIGHT / 2;
 const GAME_CONTAINER_ID = "cozy-world-game";
 const PLAYER_SPEED = 180;
 const PLAYER_RADIUS = 18;
+const JOYSTICK_RADIUS = 52; // maximum thumb travel
+const JOYSTICK_THUMB_RADIUS = 22; // visible thumb size
+const JOYSTICK_MARGIN = 28; // distance from canvas edge
+const JOYSTICK_DEAD_ZONE = 8; // ignores tiny accidental movements
+const TOUCH_LAYOUT_BREAKPOINT = 600; // show controls in narrow test windows
 
 interface MovementKeys {
   up: Phaser.Input.Keyboard.Key;
@@ -19,7 +24,14 @@ class ClearingScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Arc;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private movementKeys!: MovementKeys;
+
+  private keyboardIntent = new Phaser.Math.Vector2();
+  private touchIntent = new Phaser.Math.Vector2();
   private movementIntent = new Phaser.Math.Vector2();
+
+  private joystickBase!: Phaser.GameObjects.Arc;
+  private joystickThumb!: Phaser.GameObjects.Arc;
+  private activeJoystickPointerId: number | null = null;
 
   constructor() {
     super("clearing");
@@ -170,6 +182,8 @@ class ClearingScene extends Phaser.Scene {
       right: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
     };
 
+    this.createTouchControls();
+
     // Draw a screen-level game label.
     //
     // setScrollFactor(0) keeps the text attached to the viewport instead of
@@ -217,7 +231,213 @@ class ClearingScene extends Phaser.Scene {
       0.12,
     );
   }
-  private readMovementIntent(): Phaser.Math.Vector2 {
+
+  private createTouchControls() {
+    // The base marks the joystick's available movement area.
+    this.joystickBase = this.add
+      .circle(
+        0,
+        0,
+        JOYSTICK_RADIUS,
+        0x1f2a1f,
+        0.48,
+      )
+      .setStrokeStyle(
+        3,
+        0xfff2d2,
+        0.7,
+      )
+      .setScrollFactor(0);
+
+    // The thumb shows the direction currently selected by the player.
+    this.joystickThumb = this.add
+      .circle(
+        0,
+        0,
+        JOYSTICK_THUMB_RADIUS,
+        0xfff2d2,
+        0.8,
+      )
+      .setScrollFactor(0);
+
+    this.positionTouchControls();
+
+    // Reposition the joystick whenever Phaser resizes its canvas.
+    this.scale.on(
+      Phaser.Scale.Events.RESIZE,
+      this.positionTouchControls,
+      this,
+    );
+
+    // Prevent a Scale Manager listener from surviving if this scene shuts down.
+    this.events.once(
+      Phaser.Scenes.Events.SHUTDOWN,
+      () => {
+        this.scale.off(
+          Phaser.Scale.Events.RESIZE,
+          this.positionTouchControls,
+          this,
+        );
+      },
+    );
+
+    this.input.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      this.handleJoystickPointerDown,
+      this,
+    );
+
+    this.input.on(
+      Phaser.Input.Events.POINTER_MOVE,
+      this.handleJoystickPointerMove,
+      this,
+    );
+
+    this.input.on(
+      Phaser.Input.Events.POINTER_UP,
+      this.handleJoystickPointerUp,
+      this,
+    );
+  }
+
+  private positionTouchControls() {
+    const shouldShowTouchControls =
+      this.scale.width <= TOUCH_LAYOUT_BREAKPOINT ||
+      this.sys.game.device.input.touch;
+
+    this.joystickBase.setVisible(shouldShowTouchControls);
+    this.joystickThumb.setVisible(shouldShowTouchControls);
+
+    const joystickX =
+      JOYSTICK_MARGIN + JOYSTICK_RADIUS;
+
+    const joystickY =
+      this.scale.height -
+      JOYSTICK_MARGIN -
+      JOYSTICK_RADIUS;
+
+    this.joystickBase.setPosition(
+      joystickX,
+      joystickY,
+    );
+
+    // Keep the thumb centered unless a pointer is actively controlling it.
+    if (this.activeJoystickPointerId === null) {
+      this.joystickThumb.setPosition(
+        joystickX,
+        joystickY,
+      );
+    }
+  }
+
+  private handleJoystickPointerDown(
+    pointer: Phaser.Input.Pointer,
+  ) {
+    if (!this.joystickBase.visible) {
+      return;
+    }
+
+    if (this.activeJoystickPointerId !== null) {
+      return;
+    }
+
+    const distanceFromBase =
+      Phaser.Math.Distance.Between(
+        pointer.x,
+        pointer.y,
+        this.joystickBase.x,
+        this.joystickBase.y,
+      );
+
+    const activationRadius =
+      JOYSTICK_RADIUS + JOYSTICK_THUMB_RADIUS;
+
+    // Touches elsewhere in the game should remain available for future
+    // interactions such as planting or toggling a lamp.
+    if (distanceFromBase > activationRadius) {
+      return;
+    }
+
+    this.activeJoystickPointerId = pointer.id;
+    this.updateTouchIntent(pointer);
+  }
+
+  private handleJoystickPointerUp(
+    pointer: Phaser.Input.Pointer,
+  ) {
+    if (pointer.id !== this.activeJoystickPointerId) {
+      return;
+    }
+
+    this.activeJoystickPointerId = null;
+    this.touchIntent.set(0, 0);
+
+    this.joystickThumb.setPosition(
+      this.joystickBase.x,
+      this.joystickBase.y,
+    );
+  }
+  private handleJoystickPointerMove(
+    pointer: Phaser.Input.Pointer,
+  ) {
+    if (pointer.id !== this.activeJoystickPointerId) {
+      return;
+    }
+
+    this.updateTouchIntent(pointer);
+  }
+
+  private updateTouchIntent(
+    pointer: Phaser.Input.Pointer,
+  ) {
+    const horizontalDistance =
+      pointer.x - this.joystickBase.x;
+
+    const verticalDistance =
+      pointer.y - this.joystickBase.y;
+
+    const pointerDistance = Math.hypot(
+      horizontalDistance,
+      verticalDistance,
+    );
+
+    // Ignore tiny movements near the center so an imperfect stationary touch
+    // does not make the player drift.
+    if (pointerDistance <= JOYSTICK_DEAD_ZONE) {
+      this.touchIntent.set(0, 0);
+
+      this.joystickThumb.setPosition(
+        this.joystickBase.x,
+        this.joystickBase.y,
+      );
+
+      return;
+    }
+
+    // Convert the pointer displacement into a unit direction.
+    this.touchIntent
+      .set(
+        horizontalDistance,
+        verticalDistance,
+      )
+      .normalize();
+
+    // Restrict the visible thumb to the circular joystick boundary.
+    const thumbDistance = Math.min(
+      pointerDistance,
+      JOYSTICK_RADIUS,
+    );
+
+    this.joystickThumb.setPosition(
+      this.joystickBase.x +
+      this.touchIntent.x * thumbDistance,
+      this.joystickBase.y +
+      this.touchIntent.y * thumbDistance,
+    );
+  }
+
+  // Convert keyboard state into a normalized direction
+  private readKeyboardIntent(): Phaser.Math.Vector2 {
     const isLeftPressed =
       this.cursors.left.isDown ||
       this.movementKeys.left.isDown;
@@ -256,18 +476,34 @@ class ClearingScene extends Phaser.Scene {
       verticalDirection = 1;
     }
 
-    this.movementIntent.set(
+    this.keyboardIntent.set(
       horizontalDirection,
       verticalDirection,
     );
 
     // Normalize diagonal directions so moving diagonally is not faster than
     // moving horizontally or vertically.
-    if (this.movementIntent.lengthSq() > 0) {
-      this.movementIntent.normalize();
+    if (this.keyboardIntent.lengthSq() > 0) {
+      this.keyboardIntent.normalize();
     }
 
-    return this.movementIntent;
+    return this.keyboardIntent;
+  }
+
+  private readMovementIntent(): Phaser.Math.Vector2 {
+    const keyboardIntent =
+      this.readKeyboardIntent();
+
+    // Keyboard takes priority when it is actively producing a direction.
+    if (keyboardIntent.lengthSq() > 0) {
+      return this.movementIntent.copy(
+        keyboardIntent,
+      );
+    }
+
+    return this.movementIntent.copy(
+      this.touchIntent,
+    );
   }
 
   update() {

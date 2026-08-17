@@ -11,16 +11,16 @@ const description = "A tiny, peaceful world in an autumn forest.";
     <h1>{title}</h1>
     <p>{description}</p>
 
-    <div
-      id="cozy-world-game"
-      aria-label="Cozy World game area"
-    ></div>
+    <div id="cozy-world-game" aria-label="Cozy World game area"></div>
 
     <noscript>
       <p>Cozy World requires JavaScript to run.</p>
     </noscript>
 
-    <p class="meta">First playable version in development.</p>
+    <p class="meta">
+      Move with WASD or the arrow keys. On narrow or touch screens, use the
+      on-screen joystick.
+    </p>
   </section>
 
   <style>
@@ -42,20 +42,20 @@ const description = "A tiny, peaceful world in an autumn forest.";
     }
 
     #cozy-world-game {
-  width: 100%;
-  height: clamp(420px, 72dvh, 700px);
-  margin-top: 1.5rem;
-  overflow: hidden;
-  border: 1px solid #7b4c2c;
-  border-radius: 16px;
-  background: #536b45;
-  box-shadow: 0 20px 50px rgb(62 40 23 / 18%);
-  touch-action: none;
-}
+      width: 100%;
+      height: clamp(420px, 72dvh, 700px);
+      margin-top: 1.5rem;
+      overflow: hidden;
+      border: 1px solid #7b4c2c;
+      border-radius: 16px;
+      background: #536b45;
+      box-shadow: 0 20px 50px rgb(62 40 23 / 18%);
+      touch-action: none;
+    }
 
-:global(#cozy-world-game canvas) {
-  display: block;
-}
+    :global(#cozy-world-game canvas) {
+      display: block;
+    }
   </style>
   <script>
     import "../../games/cozy-world/main";
