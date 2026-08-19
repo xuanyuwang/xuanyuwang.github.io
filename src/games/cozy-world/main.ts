@@ -5,6 +5,12 @@ const WORLD_WIDTH = 1200;
 const WORLD_HEIGHT = 800;
 const cottageX = WORLD_WIDTH / 2;
 const cottageY = WORLD_HEIGHT / 2;
+const CLEARING_SCENE_KEY = "clearing";
+const COTTAGE_SCENE_KEY = "cottage";
+
+const COTTAGE_ENTRANCE_WIDTH = 70;
+const COTTAGE_ENTRANCE_HEIGHT = 48;
+const COTTAGE_ENTRANCE_Y = cottageY + 115;
 const LEFT_TREE_X = cottageX - 300;
 const LEFT_TREE_TRUNK_Y = cottageY - 100;
 const RIGHT_TREE_X = cottageX + 260;
@@ -39,9 +45,10 @@ class ClearingScene extends Phaser.Scene {
   private activeJoystickPointerId: number | null = null;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
+  private cottageEntrance!: Phaser.GameObjects.Rectangle;
 
   constructor() {
-    super("clearing");
+    super(CLEARING_SCENE_KEY);
   }
 
   create() {
@@ -131,7 +138,24 @@ class ClearingScene extends Phaser.Scene {
       150,
       190,
     );
+    // Detect when the player approaches the cottage door.
+    //
+    // Unlike a collider, this overlap zone does not block or move the player.
+    // It exists only to trigger the transition to the interior scene.
+    this.cottageEntrance = this.add.rectangle(
+      cottageX,
+      COTTAGE_ENTRANCE_Y,
+      COTTAGE_ENTRANCE_WIDTH,
+      COTTAGE_ENTRANCE_HEIGHT,
+      0x00ffff,
+      DEBUG_PHYSICS ? 0.35 : 0,
+    );
 
+    // The second argument makes the new Arcade Physics body static.
+    this.physics.add.existing(
+      this.cottageEntrance,
+      true,
+    );
     // Draw the circular autumn canopy of the tree on the left.
     this.add.circle(
       LEFT_TREE_X,
@@ -203,6 +227,14 @@ class ClearingScene extends Phaser.Scene {
       this.player,
       this.obstacles,
     );
+
+    this.physics.add.overlap(
+      this.player,
+      this.cottageEntrance,
+      this.enterCottage,
+      undefined,
+      this,
+    );
     const keyboard = this.input.keyboard;
 
     if (!keyboard) {
@@ -268,6 +300,10 @@ class ClearingScene extends Phaser.Scene {
       0.12,
       0.12,
     );
+  }
+
+  private enterCottage() {
+    this.scene.start(COTTAGE_SCENE_KEY);
   }
 
   private createStaticObstacle(
@@ -576,6 +612,105 @@ class ClearingScene extends Phaser.Scene {
   }
 }
 
+class CottageScene extends Phaser.Scene {
+  constructor() {
+    super(COTTAGE_SCENE_KEY);
+  }
+
+  create() {
+    const roomWidth = 720;
+    const roomHeight = 520;
+    const roomCenterX = roomWidth / 2;
+    const roomCenterY = roomHeight / 2;
+
+    this.physics.world.setBounds(
+      0,
+      0,
+      roomWidth,
+      roomHeight,
+    );
+
+    this.cameras.main.setBounds(
+      0,
+      0,
+      roomWidth,
+      roomHeight,
+    );
+
+    this.cameras.main.centerOn(
+      roomCenterX,
+      roomCenterY,
+    );
+
+    // Fill the room with a dark wooden floor.
+    this.add.rectangle(
+      roomCenterX,
+      roomCenterY,
+      roomWidth,
+      roomHeight,
+      0x6f4935,
+    );
+
+    // Draw a lighter rug as a temporary interior landmark.
+    this.add.rectangle(
+      roomCenterX,
+      roomCenterY,
+      260,
+      180,
+      0xa7684a,
+    );
+
+    // Represent the player with the same temporary primitive shape.
+    this.add.circle(
+      roomCenterX,
+      roomCenterY + 120,
+      PLAYER_RADIUS,
+      0xf4d6a0,
+    );
+
+    this.add
+      .text(
+        24,
+        22,
+        "Inside the cottage",
+        {
+          color: "#fff2d2",
+          fontFamily: "Georgia, serif",
+          fontSize: "28px",
+        },
+      )
+      .setScrollFactor(0);
+
+    const leaveButton = this.add
+      .text(
+        24,
+        66,
+        "Leave cottage",
+        {
+          backgroundColor: "#4b2d24",
+          color: "#fff2d2",
+          fontFamily: "Georgia, serif",
+          fontSize: "18px",
+          padding: {
+            x: 14,
+            y: 10,
+          },
+        },
+      )
+      .setInteractive({
+        useHandCursor: true,
+      })
+      .setScrollFactor(0);
+
+    leaveButton.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      () => {
+        this.scene.start(CLEARING_SCENE_KEY);
+      },
+    );
+  }
+}
+
 const container = document.getElementById(GAME_CONTAINER_ID);
 
 if (!container) {
@@ -588,7 +723,7 @@ new Phaser.Game({
   type: Phaser.AUTO,
   parent: GAME_CONTAINER_ID,
   backgroundColor: "#536b45",
-  scene: ClearingScene,
+  scene: [ClearingScene, CottageScene],
   physics: {
     default: "arcade",
     arcade: {
