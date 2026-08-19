@@ -1,6 +1,10 @@
 import Phaser from "phaser";
 
 const DEBUG_PHYSICS = import.meta.env.DEV;
+const COTTAGE_ROOM_WIDTH = 720;
+const COTTAGE_ROOM_HEIGHT = 520;
+const COTTAGE_ROOM_CENTER_X = COTTAGE_ROOM_WIDTH / 2;
+const COTTAGE_ROOM_CENTER_Y = COTTAGE_ROOM_HEIGHT / 2;
 const WORLD_WIDTH = 1200;
 const WORLD_HEIGHT = 800;
 const cottageX = WORLD_WIDTH / 2;
@@ -613,59 +617,92 @@ class ClearingScene extends Phaser.Scene {
 }
 
 class CottageScene extends Phaser.Scene {
+  private player!: Phaser.GameObjects.Arc;
+  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private movementKeys!: MovementKeys;
+
+  private keyboardIntent = new Phaser.Math.Vector2();
+  private touchIntent = new Phaser.Math.Vector2();
+  private movementIntent = new Phaser.Math.Vector2();
+
+  private joystickBase!: Phaser.GameObjects.Arc;
+  private joystickThumb!: Phaser.GameObjects.Arc;
+  private activeJoystickPointerId: number | null = null;
+
   constructor() {
     super(COTTAGE_SCENE_KEY);
   }
 
   create() {
-    const roomWidth = 720;
-    const roomHeight = 520;
-    const roomCenterX = roomWidth / 2;
-    const roomCenterY = roomHeight / 2;
-
     this.physics.world.setBounds(
       0,
       0,
-      roomWidth,
-      roomHeight,
+      COTTAGE_ROOM_WIDTH,
+      COTTAGE_ROOM_HEIGHT,
     );
 
     this.cameras.main.setBounds(
       0,
       0,
-      roomWidth,
-      roomHeight,
-    );
-
-    this.cameras.main.centerOn(
-      roomCenterX,
-      roomCenterY,
+      COTTAGE_ROOM_WIDTH,
+      COTTAGE_ROOM_HEIGHT,
     );
 
     // Fill the room with a dark wooden floor.
     this.add.rectangle(
-      roomCenterX,
-      roomCenterY,
-      roomWidth,
-      roomHeight,
+      COTTAGE_ROOM_CENTER_X,
+      COTTAGE_ROOM_CENTER_Y,
+      COTTAGE_ROOM_WIDTH,
+      COTTAGE_ROOM_HEIGHT,
       0x6f4935,
     );
 
     // Draw a lighter rug as a temporary interior landmark.
     this.add.rectangle(
-      roomCenterX,
-      roomCenterY,
+      COTTAGE_ROOM_CENTER_X,
+      COTTAGE_ROOM_CENTER_Y,
       260,
       180,
       0xa7684a,
     );
 
     // Represent the player with the same temporary primitive shape.
-    this.add.circle(
-      roomCenterX,
-      roomCenterY + 120,
+    this.player = this.add.circle(
+      COTTAGE_ROOM_CENTER_X,
+      COTTAGE_ROOM_CENTER_Y + 120,
       PLAYER_RADIUS,
       0xf4d6a0,
+    );
+
+    this.physics.add.existing(this.player);
+
+    const playerBody =
+      this.player.body as Phaser.Physics.Arcade.Body;
+
+    playerBody.setCollideWorldBounds(true);
+
+    const keyboard = this.input.keyboard;
+
+    if (!keyboard) {
+      throw new Error("Keyboard input is unavailable");
+    }
+
+    this.cursors = keyboard.createCursorKeys();
+
+    this.movementKeys = {
+      up: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+      down: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+      left: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+      right: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+    };
+
+    this.createTouchControls();
+
+    this.cameras.main.startFollow(
+      this.player,
+      true,
+      0.12,
+      0.12,
     );
 
     this.add
@@ -707,6 +744,270 @@ class CottageScene extends Phaser.Scene {
       () => {
         this.scene.start(CLEARING_SCENE_KEY);
       },
+    );
+  }
+
+  private createTouchControls() {
+    this.joystickBase = this.add
+      .circle(
+        0,
+        0,
+        JOYSTICK_RADIUS,
+        0x1f2a1f,
+        0.48,
+      )
+      .setStrokeStyle(
+        3,
+        0xfff2d2,
+        0.7,
+      )
+      .setScrollFactor(0);
+
+    this.joystickThumb = this.add
+      .circle(
+        0,
+        0,
+        JOYSTICK_THUMB_RADIUS,
+        0xfff2d2,
+        0.8,
+      )
+      .setScrollFactor(0);
+
+    this.positionTouchControls();
+
+    this.scale.on(
+      Phaser.Scale.Events.RESIZE,
+      this.positionTouchControls,
+      this,
+    );
+
+    this.events.once(
+      Phaser.Scenes.Events.SHUTDOWN,
+      () => {
+        this.scale.off(
+          Phaser.Scale.Events.RESIZE,
+          this.positionTouchControls,
+          this,
+        );
+      },
+    );
+
+    this.input.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      this.handleJoystickPointerDown,
+      this,
+    );
+
+    this.input.on(
+      Phaser.Input.Events.POINTER_MOVE,
+      this.handleJoystickPointerMove,
+      this,
+    );
+
+    this.input.on(
+      Phaser.Input.Events.POINTER_UP,
+      this.handleJoystickPointerUp,
+      this,
+    );
+  }
+
+  private positionTouchControls() {
+    const shouldShowTouchControls =
+      this.scale.width <= TOUCH_LAYOUT_BREAKPOINT ||
+      this.sys.game.device.input.touch;
+
+    this.joystickBase.setVisible(shouldShowTouchControls);
+    this.joystickThumb.setVisible(shouldShowTouchControls);
+
+    const joystickX =
+      JOYSTICK_MARGIN + JOYSTICK_RADIUS;
+
+    const joystickY =
+      this.scale.height -
+      JOYSTICK_MARGIN -
+      JOYSTICK_RADIUS;
+
+    this.joystickBase.setPosition(
+      joystickX,
+      joystickY,
+    );
+
+    if (this.activeJoystickPointerId === null) {
+      this.joystickThumb.setPosition(
+        joystickX,
+        joystickY,
+      );
+    }
+  }
+
+  private handleJoystickPointerDown(
+    pointer: Phaser.Input.Pointer,
+  ) {
+    if (!this.joystickBase.visible) {
+      return;
+    }
+
+    if (this.activeJoystickPointerId !== null) {
+      return;
+    }
+
+    const distanceFromBase =
+      Phaser.Math.Distance.Between(
+        pointer.x,
+        pointer.y,
+        this.joystickBase.x,
+        this.joystickBase.y,
+      );
+
+    const activationRadius =
+      JOYSTICK_RADIUS + JOYSTICK_THUMB_RADIUS;
+
+    if (distanceFromBase > activationRadius) {
+      return;
+    }
+
+    this.activeJoystickPointerId = pointer.id;
+    this.updateTouchIntent(pointer);
+  }
+
+  private handleJoystickPointerUp(
+    pointer: Phaser.Input.Pointer,
+  ) {
+    if (pointer.id !== this.activeJoystickPointerId) {
+      return;
+    }
+
+    this.activeJoystickPointerId = null;
+    this.touchIntent.set(0, 0);
+
+    this.joystickThumb.setPosition(
+      this.joystickBase.x,
+      this.joystickBase.y,
+    );
+  }
+
+  private handleJoystickPointerMove(
+    pointer: Phaser.Input.Pointer,
+  ) {
+    if (pointer.id !== this.activeJoystickPointerId) {
+      return;
+    }
+
+    this.updateTouchIntent(pointer);
+  }
+
+  private updateTouchIntent(
+    pointer: Phaser.Input.Pointer,
+  ) {
+    const horizontalDistance =
+      pointer.x - this.joystickBase.x;
+
+    const verticalDistance =
+      pointer.y - this.joystickBase.y;
+
+    const pointerDistance = Math.hypot(
+      horizontalDistance,
+      verticalDistance,
+    );
+
+    if (pointerDistance <= JOYSTICK_DEAD_ZONE) {
+      this.touchIntent.set(0, 0);
+
+      this.joystickThumb.setPosition(
+        this.joystickBase.x,
+        this.joystickBase.y,
+      );
+
+      return;
+    }
+
+    this.touchIntent
+      .set(
+        horizontalDistance,
+        verticalDistance,
+      )
+      .normalize();
+
+    const thumbDistance = Math.min(
+      pointerDistance,
+      JOYSTICK_RADIUS,
+    );
+
+    this.joystickThumb.setPosition(
+      this.joystickBase.x +
+      this.touchIntent.x * thumbDistance,
+      this.joystickBase.y +
+      this.touchIntent.y * thumbDistance,
+    );
+  }
+
+  private readKeyboardIntent(): Phaser.Math.Vector2 {
+    const isLeftPressed =
+      this.cursors.left.isDown ||
+      this.movementKeys.left.isDown;
+
+    const isRightPressed =
+      this.cursors.right.isDown ||
+      this.movementKeys.right.isDown;
+
+    const isUpPressed =
+      this.cursors.up.isDown ||
+      this.movementKeys.up.isDown;
+
+    const isDownPressed =
+      this.cursors.down.isDown ||
+      this.movementKeys.down.isDown;
+
+    let horizontalDirection = 0;
+    let verticalDirection = 0;
+
+    if (isLeftPressed && !isRightPressed) {
+      horizontalDirection = -1;
+    } else if (isRightPressed && !isLeftPressed) {
+      horizontalDirection = 1;
+    }
+
+    if (isUpPressed && !isDownPressed) {
+      verticalDirection = -1;
+    } else if (isDownPressed && !isUpPressed) {
+      verticalDirection = 1;
+    }
+
+    this.keyboardIntent.set(
+      horizontalDirection,
+      verticalDirection,
+    );
+
+    if (this.keyboardIntent.lengthSq() > 0) {
+      this.keyboardIntent.normalize();
+    }
+
+    return this.keyboardIntent;
+  }
+
+  private readMovementIntent(): Phaser.Math.Vector2 {
+    const keyboardIntent =
+      this.readKeyboardIntent();
+
+    if (keyboardIntent.lengthSq() > 0) {
+      return this.movementIntent.copy(
+        keyboardIntent,
+      );
+    }
+
+    return this.movementIntent.copy(
+      this.touchIntent,
+    );
+  }
+
+  update() {
+    const movementIntent = this.readMovementIntent();
+    const playerBody =
+      this.player.body as Phaser.Physics.Arcade.Body;
+
+    playerBody.setVelocity(
+      movementIntent.x * PLAYER_SPEED,
+      movementIntent.y * PLAYER_SPEED,
     );
   }
 }
