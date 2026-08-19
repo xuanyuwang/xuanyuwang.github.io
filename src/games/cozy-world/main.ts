@@ -22,6 +22,22 @@ const RIGHT_TREE_TRUNK_Y = cottageY - 100;
 const GAME_CONTAINER_ID = "cozy-world-game";
 const PLAYER_SPEED = 180;
 const PLAYER_RADIUS = 18;
+const COTTAGE_PLAYER_SPAWN_X = COTTAGE_ROOM_CENTER_X;
+
+const COTTAGE_PLAYER_SPAWN_Y =
+  COTTAGE_ROOM_CENTER_Y + 120;
+
+const COTTAGE_EXIT_WIDTH = 90;
+const COTTAGE_EXIT_HEIGHT = 36;
+const COTTAGE_EXIT_Y =
+  COTTAGE_ROOM_HEIGHT - COTTAGE_EXIT_HEIGHT / 2;
+
+const CLEARING_RETURN_X = cottageX;
+const CLEARING_RETURN_Y =
+  COTTAGE_ENTRANCE_Y +
+  COTTAGE_ENTRANCE_HEIGHT / 2 +
+  PLAYER_RADIUS +
+  24;
 const JOYSTICK_RADIUS = 52; // maximum thumb travel
 const JOYSTICK_THUMB_RADIUS = 22; // visible thumb size
 const JOYSTICK_MARGIN = 28; // distance from canvas edge
@@ -35,6 +51,69 @@ interface MovementKeys {
   right: Phaser.Input.Keyboard.Key;
 }
 
+interface ClearingSceneData {
+  playerX?: number;
+  playerY?: number;
+}
+function addDebugPositionMarker(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  label: string,
+  color: number,
+) {
+  if (!DEBUG_PHYSICS) {
+    return;
+  }
+
+  scene.add
+    .circle(
+      x,
+      y,
+      8,
+      color,
+      0.85,
+    )
+    .setDepth(1000);
+
+  scene.add
+    .rectangle(
+      x,
+      y,
+      28,
+      2,
+      color,
+    )
+    .setDepth(1000);
+
+  scene.add
+    .rectangle(
+      x,
+      y,
+      2,
+      28,
+      color,
+    )
+    .setDepth(1000);
+
+  scene.add
+    .text(
+      x + 14,
+      y - 22,
+      `${label}\n(${x}, ${y})`,
+      {
+        backgroundColor: "#000000aa",
+        color: "#ffffff",
+        fontFamily: "monospace",
+        fontSize: "13px",
+        padding: {
+          x: 5,
+          y: 3,
+        },
+      },
+    )
+    .setDepth(1000);
+}
 class ClearingScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Arc;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -55,7 +134,7 @@ class ClearingScene extends Phaser.Scene {
     super(CLEARING_SCENE_KEY);
   }
 
-  create() {
+  create(data: ClearingSceneData = {}) {
     this.obstacles = this.physics.add.staticGroup();
 
     // Fill the entire game world with the lighter grass color.
@@ -208,13 +287,41 @@ class ClearingScene extends Phaser.Scene {
       30,
       48,
     );
+    addDebugPositionMarker(
+      this,
+      cottageX,
+      cottageY + 250,
+      "Initial spawn",
+      0xffff00,
+    );
+
+    addDebugPositionMarker(
+      this,
+      CLEARING_RETURN_X,
+      CLEARING_RETURN_Y,
+      "Return from cottage",
+      0x00ff88,
+    );
+
+    addDebugPositionMarker(
+      this,
+      cottageX,
+      COTTAGE_ENTRANCE_Y,
+      "Cottage entrance",
+      0x00ffff,
+    );
+    const playerSpawnX =
+      data.playerX ?? cottageX;
+
+    const playerSpawnY =
+      data.playerY ?? cottageY + 250;
     // Create the temporary player appearance.
     //
     // The primitive circle is intentionally simple. It lets us validate movement,
     // physics, and camera behavior before introducing sprite assets.
     this.player = this.add.circle(
-      cottageX,
-      cottageY + 250,
+      playerSpawnX,
+      playerSpawnY,
       PLAYER_RADIUS,
       0xf4d6a0,
     );
@@ -629,11 +736,16 @@ class CottageScene extends Phaser.Scene {
   private joystickThumb!: Phaser.GameObjects.Arc;
   private activeJoystickPointerId: number | null = null;
 
+  private obstacles!: Phaser.Physics.Arcade.StaticGroup;
+  private cottageExit!: Phaser.GameObjects.Rectangle;
+
   constructor() {
     super(COTTAGE_SCENE_KEY);
   }
 
   create() {
+    this.obstacles = this.physics.add.staticGroup();
+
     this.physics.world.setBounds(
       0,
       0,
@@ -657,6 +769,54 @@ class CottageScene extends Phaser.Scene {
       0x6f4935,
     );
 
+    const wallThickness = 28;
+    const wallColor = 0x4b2d24;
+
+    // Draw the top and side walls. Physics world bounds provide their collision.
+    this.add.rectangle(
+      COTTAGE_ROOM_CENTER_X,
+      wallThickness / 2,
+      COTTAGE_ROOM_WIDTH,
+      wallThickness,
+      wallColor,
+    );
+
+    this.add.rectangle(
+      wallThickness / 2,
+      COTTAGE_ROOM_CENTER_Y,
+      wallThickness,
+      COTTAGE_ROOM_HEIGHT,
+      wallColor,
+    );
+
+    this.add.rectangle(
+      COTTAGE_ROOM_WIDTH - wallThickness / 2,
+      COTTAGE_ROOM_CENTER_Y,
+      wallThickness,
+      COTTAGE_ROOM_HEIGHT,
+      wallColor,
+    );
+
+    // Split the bottom wall so its visual doorway matches the exit zone.
+    const sideWallWidth =
+      (COTTAGE_ROOM_WIDTH - COTTAGE_EXIT_WIDTH) / 2;
+
+    this.add.rectangle(
+      sideWallWidth / 2,
+      COTTAGE_ROOM_HEIGHT - wallThickness / 2,
+      sideWallWidth,
+      wallThickness,
+      wallColor,
+    );
+
+    this.add.rectangle(
+      COTTAGE_ROOM_WIDTH - sideWallWidth / 2,
+      COTTAGE_ROOM_HEIGHT - wallThickness / 2,
+      sideWallWidth,
+      wallThickness,
+      wallColor,
+    );
+
     // Draw a lighter rug as a temporary interior landmark.
     this.add.rectangle(
       COTTAGE_ROOM_CENTER_X,
@@ -666,10 +826,44 @@ class CottageScene extends Phaser.Scene {
       0xa7684a,
     );
 
+    const tableX = COTTAGE_ROOM_CENTER_X;
+    const tableY = COTTAGE_ROOM_CENTER_Y - 70;
+    const tableWidth = 130;
+    const tableHeight = 70;
+
+    this.add.rectangle(
+      tableX,
+      tableY,
+      tableWidth,
+      tableHeight,
+      0x805536,
+    );
+
+    this.createStaticObstacle(
+      tableX,
+      tableY,
+      tableWidth,
+      tableHeight,
+    );
+    addDebugPositionMarker(
+      this,
+      COTTAGE_PLAYER_SPAWN_X,
+      COTTAGE_PLAYER_SPAWN_Y,
+      "Interior spawn",
+      0xffff00,
+    );
+
+    addDebugPositionMarker(
+      this,
+      COTTAGE_ROOM_CENTER_X,
+      COTTAGE_EXIT_Y,
+      "Return to clearing",
+      0x00ffff,
+    );
     // Represent the player with the same temporary primitive shape.
     this.player = this.add.circle(
-      COTTAGE_ROOM_CENTER_X,
-      COTTAGE_ROOM_CENTER_Y + 120,
+      COTTAGE_PLAYER_SPAWN_X,
+      COTTAGE_PLAYER_SPAWN_Y,
       PLAYER_RADIUS,
       0xf4d6a0,
     );
@@ -680,6 +874,34 @@ class CottageScene extends Phaser.Scene {
       this.player.body as Phaser.Physics.Arcade.Body;
 
     playerBody.setCollideWorldBounds(true);
+
+    this.physics.add.collider(
+      this.player,
+      this.obstacles,
+    );
+
+    // Detect when the player walks through the bottom doorway.
+    this.cottageExit = this.add.rectangle(
+      COTTAGE_ROOM_CENTER_X,
+      COTTAGE_EXIT_Y,
+      COTTAGE_EXIT_WIDTH,
+      COTTAGE_EXIT_HEIGHT,
+      0x00ffff,
+      DEBUG_PHYSICS ? 0.35 : 0,
+    );
+
+    this.physics.add.existing(
+      this.cottageExit,
+      true,
+    );
+
+    this.physics.add.overlap(
+      this.player,
+      this.cottageExit,
+      this.leaveCottage,
+      undefined,
+      this,
+    );
 
     const keyboard = this.input.keyboard;
 
@@ -718,33 +940,48 @@ class CottageScene extends Phaser.Scene {
       )
       .setScrollFactor(0);
 
-    const leaveButton = this.add
+    this.add
       .text(
         24,
         66,
-        "Leave cottage",
+        "Walk through the bottom doorway to leave.",
         {
-          backgroundColor: "#4b2d24",
-          color: "#fff2d2",
+          color: "#f5dfbd",
           fontFamily: "Georgia, serif",
-          fontSize: "18px",
-          padding: {
-            x: 14,
-            y: 10,
-          },
+          fontSize: "16px",
         },
       )
-      .setInteractive({
-        useHandCursor: true,
-      })
       .setScrollFactor(0);
+  }
 
-    leaveButton.on(
-      Phaser.Input.Events.POINTER_DOWN,
-      () => {
-        this.scene.start(CLEARING_SCENE_KEY);
-      },
+  private leaveCottage() {
+    this.scene.start(
+      CLEARING_SCENE_KEY,
+      {
+        playerX: CLEARING_RETURN_X,
+        playerY: CLEARING_RETURN_Y,
+      } satisfies ClearingSceneData,
     );
+  }
+
+  private createStaticObstacle(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ) {
+    const obstacle = this.add.rectangle(
+      x,
+      y,
+      width,
+      height,
+      0xff00ff,
+      DEBUG_PHYSICS ? 0.35 : 0,
+    );
+
+    this.obstacles.add(obstacle);
+
+    return obstacle;
   }
 
   private createTouchControls() {
