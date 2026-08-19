@@ -1,9 +1,14 @@
 import Phaser from "phaser";
 
+const DEBUG_PHYSICS = import.meta.env.DEV;
 const WORLD_WIDTH = 1200;
 const WORLD_HEIGHT = 800;
 const cottageX = WORLD_WIDTH / 2;
 const cottageY = WORLD_HEIGHT / 2;
+const LEFT_TREE_X = cottageX - 300;
+const LEFT_TREE_TRUNK_Y = cottageY - 100;
+const RIGHT_TREE_X = cottageX + 260;
+const RIGHT_TREE_TRUNK_Y = cottageY - 100;
 const GAME_CONTAINER_ID = "cozy-world-game";
 const PLAYER_SPEED = 180;
 const PLAYER_RADIUS = 18;
@@ -33,11 +38,15 @@ class ClearingScene extends Phaser.Scene {
   private joystickThumb!: Phaser.GameObjects.Arc;
   private activeJoystickPointerId: number | null = null;
 
+  private obstacles!: Phaser.Physics.Arcade.StaticGroup;
+
   constructor() {
     super("clearing");
   }
 
   create() {
+    this.obstacles = this.physics.add.staticGroup();
+
     // Fill the entire game world with the lighter grass color.
     // This is the base layer behind every other shape.
     this.add.rectangle(
@@ -112,9 +121,20 @@ class ClearingScene extends Phaser.Scene {
       0xf2c66d,
     );
 
+    // Block the complete visible footprint of the cottage.
+    //
+    // The collider covers the roof and body as one simple rectangle. We will
+    // replace part of it with an entrance zone when the cottage becomes enterable.
+    this.createStaticObstacle(
+      cottageX,
+      cottageY,
+      150,
+      190,
+    );
+
     // Draw the circular autumn canopy of the tree on the left.
     this.add.circle(
-      cottageX - 300,
+      LEFT_TREE_X,
       cottageY - 165,
       48,
       0xb85c38,
@@ -122,16 +142,25 @@ class ClearingScene extends Phaser.Scene {
 
     // Draw the trunk of the tree on the left.
     this.add.rectangle(
-      cottageX - 300,
-      cottageY - 100,
+      LEFT_TREE_X,
+      LEFT_TREE_TRUNK_Y,
       18,
       100,
       0x68452f,
     );
 
+    // Only the lower trunk blocks movement.
+    // The player may move visually beneath the canopy.
+    this.createStaticObstacle(
+      LEFT_TREE_X,
+      LEFT_TREE_TRUNK_Y + 28,
+      28,
+      44,
+    );
+
     // Draw the circular autumn canopy of the tree on the right.
     this.add.circle(
-      cottageX + 260,
+      RIGHT_TREE_X,
       cottageY - 185,
       55,
       0xcf783d,
@@ -139,13 +168,18 @@ class ClearingScene extends Phaser.Scene {
 
     // Draw the trunk of the tree on the right.
     this.add.rectangle(
-      cottageX + 260,
-      cottageY - 110,
+      RIGHT_TREE_X,
+      RIGHT_TREE_TRUNK_Y,
       20,
       110,
       0x68452f,
     );
-
+    this.createStaticObstacle(
+      RIGHT_TREE_X,
+      RIGHT_TREE_TRUNK_Y + 30,
+      30,
+      48,
+    );
     // Create the temporary player appearance.
     //
     // The primitive circle is intentionally simple. It lets us validate movement,
@@ -159,12 +193,16 @@ class ClearingScene extends Phaser.Scene {
 
     // Give the visible circle an Arcade Physics body.
     this.physics.add.existing(this.player);
-
     const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
 
     // Stop the physics body at the configured world boundary.
     playerBody.setCollideWorldBounds(true);
 
+    // Resolve collisions between the moving player and fixed scenery.
+    this.physics.add.collider(
+      this.player,
+      this.obstacles,
+    );
     const keyboard = this.input.keyboard;
 
     if (!keyboard) {
@@ -230,6 +268,26 @@ class ClearingScene extends Phaser.Scene {
       0.12,
       0.12,
     );
+  }
+
+  private createStaticObstacle(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ) {
+    const obstacle = this.add.rectangle(
+      x,
+      y,
+      width,
+      height,
+      0xff00ff,
+      DEBUG_PHYSICS ? 0.35 : 0,
+    );
+
+    this.obstacles.add(obstacle);
+
+    return obstacle;
   }
 
   private createTouchControls() {
@@ -534,7 +592,7 @@ new Phaser.Game({
   physics: {
     default: "arcade",
     arcade: {
-      debug: false,
+      debug: DEBUG_PHYSICS,
     },
   },
   scale: {
