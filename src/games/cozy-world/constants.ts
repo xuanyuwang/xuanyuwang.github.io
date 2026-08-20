@@ -4,6 +4,12 @@ export const PLAYER_TEXTURE_KEY =
 export const PLAYER_ASSET_PATH =
   "/cozy-world/player/player.svg";
 
+export const COTTAGE_TEXTURE_KEY =
+  "cozy-world-cottage";
+
+export const COTTAGE_ASSET_PATH =
+  "/cozy-world/scenery/cottage.svg";
+
 export const DEBUG_PHYSICS = import.meta.env.DEV;
 
 export const WORLD_WIDTH = 1200;
@@ -11,6 +17,7 @@ export const WORLD_HEIGHT = 800;
 
 export const COTTAGE_X = WORLD_WIDTH / 2;
 export const COTTAGE_Y = WORLD_HEIGHT / 2;
+export const COTTAGE_BASE_Y = COTTAGE_Y + 55;
 
 export const CLEARING_SCENE_KEY = "clearing";
 export const COTTAGE_SCENE_KEY = "cottage";

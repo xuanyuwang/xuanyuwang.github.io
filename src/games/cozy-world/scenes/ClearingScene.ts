@@ -5,10 +5,13 @@ import {
   CLEARING_RETURN_X,
   CLEARING_RETURN_Y,
   CLEARING_SCENE_KEY,
+  COTTAGE_ASSET_PATH,
+  COTTAGE_BASE_Y,
   COTTAGE_ENTRANCE_HEIGHT,
   COTTAGE_ENTRANCE_WIDTH,
   COTTAGE_ENTRANCE_Y,
   COTTAGE_SCENE_KEY,
+  COTTAGE_TEXTURE_KEY,
   COTTAGE_X,
   COTTAGE_Y,
   DEBUG_PHYSICS,
@@ -39,18 +42,27 @@ export class ClearingScene extends Phaser.Scene {
   }
 
   preload() {
-    if (this.textures.exists(PLAYER_TEXTURE_KEY)) {
-      return;
+    if (!this.textures.exists(PLAYER_TEXTURE_KEY)) {
+      this.load.svg(
+        PLAYER_TEXTURE_KEY,
+        PLAYER_ASSET_PATH,
+        {
+          width: 48,
+          height: 64,
+        },
+      );
     }
 
-    this.load.svg(
-      PLAYER_TEXTURE_KEY,
-      PLAYER_ASSET_PATH,
-      {
-        width: 48,
-        height: 64,
-      },
-    );
+    if (!this.textures.exists(COTTAGE_TEXTURE_KEY)) {
+      this.load.svg(
+        COTTAGE_TEXTURE_KEY,
+        COTTAGE_ASSET_PATH,
+        {
+          width: 180,
+          height: 190,
+        },
+      );
+    }
   }
 
   create(data: ClearingSceneData = {}) {
@@ -77,58 +89,18 @@ export class ClearingScene extends Phaser.Scene {
       0x536b45,
     );
 
-    // Draw the rectangular body of the cottage.
-    this.add.rectangle(
-      COTTAGE_X,
-      COTTAGE_Y,
-      150,
-      110,
-      0x9b6038,
-    );
-
-    // Draw the triangular cottage roof above the cottage body.
-    //
-    // The first two arguments position the triangle in the world.
-    // The following coordinate pairs describe its three local points:
-    // left-bottom, top-center, and right-bottom.
-    this.add.triangle(
-      COTTAGE_X,
-      COTTAGE_Y - 95,
-      0,
-      80,
-      75,
-      0,
-      150,
-      80,
-      0x633a2b,
-    );
-
-    // Draw the front door near the bottom center of the cottage.
-    this.add.rectangle(
-      COTTAGE_X,
-      COTTAGE_Y + 15,
-      34,
-      80,
-      0x4b2d24,
-    );
-
-    // Draw the illuminated window on the left side of the cottage.
-    this.add.rectangle(
-      COTTAGE_X - 42,
-      COTTAGE_Y - 10,
-      28,
-      30,
-      0xf2c66d,
-    );
-
-    // Draw the illuminated window on the right side of the cottage.
-    this.add.rectangle(
-      COTTAGE_X + 42,
-      COTTAGE_Y - 10,
-      28,
-      30,
-      0xf2c66d,
-    );
+    // Draw the cottage as one composed texture. Its position refers to the
+    // center of the bottom edge where the building meets the ground.
+    this.add
+      .image(
+        COTTAGE_X,
+        COTTAGE_BASE_Y,
+        COTTAGE_TEXTURE_KEY,
+      )
+      .setOrigin(
+        0.5,
+        1,
+      );
 
     // Block the complete visible footprint of the cottage.
     //
