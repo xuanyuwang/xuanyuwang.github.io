@@ -8,6 +8,8 @@ import {
   COTTAGE_EXIT_HEIGHT,
   COTTAGE_EXIT_WIDTH,
   COTTAGE_EXIT_Y,
+  COTTAGE_INTERIOR_ASSET_PATH,
+  COTTAGE_INTERIOR_TEXTURE_KEY,
   COTTAGE_PLAYER_SPAWN_X,
   COTTAGE_PLAYER_SPAWN_Y,
   COTTAGE_ROOM_CENTER_X,
@@ -37,18 +39,27 @@ export class CottageScene extends Phaser.Scene {
   }
 
   preload() {
-    if (this.textures.exists(PLAYER_TEXTURE_KEY)) {
-      return;
+    if (!this.textures.exists(PLAYER_TEXTURE_KEY)) {
+      this.load.svg(
+        PLAYER_TEXTURE_KEY,
+        PLAYER_ASSET_PATH,
+        {
+          width: 48,
+          height: 64,
+        },
+      );
     }
 
-    this.load.svg(
-      PLAYER_TEXTURE_KEY,
-      PLAYER_ASSET_PATH,
-      {
-        width: 48,
-        height: 64,
-      },
-    );
+    if (!this.textures.exists(COTTAGE_INTERIOR_TEXTURE_KEY)) {
+      this.load.svg(
+        COTTAGE_INTERIOR_TEXTURE_KEY,
+        COTTAGE_INTERIOR_ASSET_PATH,
+        {
+          width: 320,
+          height: 250,
+        },
+      );
+    }
   }
   create() {
     this.obstacles = this.physics.add.staticGroup();
@@ -124,28 +135,24 @@ export class CottageScene extends Phaser.Scene {
       wallColor,
     );
 
-    // Draw a lighter rug as a temporary interior landmark.
-    this.add.rectangle(
-      COTTAGE_ROOM_CENTER_X,
-      COTTAGE_ROOM_CENTER_Y,
-      260,
-      180,
-      0xa7684a,
-    );
-
     const tableX = COTTAGE_ROOM_CENTER_X;
     const tableY = COTTAGE_ROOM_CENTER_Y - 70;
     const tableWidth = 130;
     const tableHeight = 70;
 
-    this.add.rectangle(
-      tableX,
-      tableY,
-      tableWidth,
-      tableHeight,
-      0x805536,
-    );
+    // Draw the rug and table as one composed visual asset.
+    this.add
+      .image(
+        COTTAGE_ROOM_CENTER_X,
+        COTTAGE_ROOM_CENTER_Y + 90,
+        COTTAGE_INTERIOR_TEXTURE_KEY,
+      )
+      .setOrigin(
+        0.5,
+        1,
+      );
 
+    // Keep the physical table footprint independent from its artwork.
     this.createStaticObstacle(
       tableX,
       tableY,

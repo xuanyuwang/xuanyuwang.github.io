@@ -1,0 +1,83 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="320"
+  height="250"
+  viewBox="0 0 320 250"
+>
+  <!-- The rug lies flat on the floor and does not block movement. -->
+  <ellipse
+    cx="160"
+    cy="148"
+    rx="142"
+    ry="88"
+    fill="#4f2f29"
+    opacity="0.22"
+  />
+
+  <rect
+    x="30"
+    y="65"
+    width="260"
+    height="170"
+    rx="24"
+    fill="#b96f4e"
+    stroke="#59372d"
+    stroke-width="8"
+  />
+
+  <!-- These nested shapes give the rug a woven border and simple pattern. -->
+  <rect
+    x="47"
+    y="82"
+    width="226"
+    height="136"
+    rx="17"
+    fill="#d69a69"
+    stroke="#7f4938"
+    stroke-width="6"
+  />
+
+  <path
+    d="M72 150 L105 112 L138 150 L105 188 Z"
+    fill="#9d523e"
+  />
+
+  <path
+    d="M182 150 L215 112 L248 150 L215 188 Z"
+    fill="#9d523e"
+  />
+
+  <!-- The table shadow visually connects the furniture to the floor. -->
+  <ellipse
+    cx="160"
+    cy="103"
+    rx="78"
+    ry="40"
+    fill="#39251f"
+    opacity="0.28"
+  />
+
+  <!-- The tabletop is the visible portion associated with the collider. -->
+  <rect
+    x="92"
+    y="40"
+    width="136"
+    height="72"
+    rx="10"
+    fill="#845333"
+    stroke="#40291f"
+    stroke-width="7"
+  />
+
+  <path
+    d="M111 58 H209"
+    fill="none"
+    stroke="#ac7548"
+    stroke-width="6"
+    stroke-linecap="round"
+  />
+
+  <!-- Short legs make the top-down object easier to read as a table. -->
+  <rect x="102" y="107" width="17" height="30" rx="5" fill="#513323" />
+  <rect x="201" y="107" width="17" height="30" rx="5" fill="#513323" />
+</svg>
