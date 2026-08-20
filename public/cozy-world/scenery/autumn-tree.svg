@@ -1,0 +1,45 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="112"
+  height="170"
+  viewBox="0 0 112 170"
+>
+  <!-- Rear branches -->
+  <path
+    d="M53 156 C50 125 42 107 29 91
+       M58 149 C62 120 72 102 88 87
+       M55 129 C53 101 52 79 57 56"
+    fill="none"
+    stroke="#68452f"
+    stroke-width="9"
+    stroke-linecap="round"
+  />
+
+  <!-- Trunk -->
+  <path
+    d="M44 166 C47 135 45 107 51 77
+       L64 77 C67 108 63 137 69 166 Z"
+    fill="#68452f"
+  />
+  <path
+    d="M55 158 C55 128 55 104 58 82"
+    fill="none"
+    stroke="#80583c"
+    stroke-width="5"
+    stroke-linecap="round"
+  />
+
+  <!-- Main autumn canopy and clusters -->
+  <circle cx="55" cy="57" r="45" fill="#b85c38" />
+  <circle cx="29" cy="62" r="27" fill="#c8683c" />
+  <circle cx="81" cy="61" r="28" fill="#cf783d" />
+  <circle cx="45" cy="34" r="27" fill="#d48042" />
+  <circle cx="70" cy="32" r="25" fill="#b95c38" />
+
+  <!-- Canopy highlights -->
+  <circle cx="34" cy="44" r="10" fill="#df8b4d" opacity="0.75" />
+  <circle cx="76" cy="48" r="11" fill="#e09550" opacity="0.65" />
+
+  <!-- Ground shadow -->
+  <ellipse cx="56" cy="165" rx="25" ry="5" fill="#3f4935" opacity="0.45" />
+</svg>

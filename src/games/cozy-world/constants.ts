@@ -10,6 +10,12 @@ export const COTTAGE_TEXTURE_KEY =
 export const COTTAGE_ASSET_PATH =
   "/cozy-world/scenery/cottage.svg";
 
+export const TREE_TEXTURE_KEY =
+  "cozy-world-autumn-tree";
+
+export const TREE_ASSET_PATH =
+  "/cozy-world/scenery/autumn-tree.svg";
+
 export const DEBUG_PHYSICS = import.meta.env.DEV;
 
 export const WORLD_WIDTH = 1200;
@@ -28,8 +34,10 @@ export const COTTAGE_ENTRANCE_Y = COTTAGE_Y + 115;
 
 export const LEFT_TREE_X = COTTAGE_X - 300;
 export const LEFT_TREE_TRUNK_Y = COTTAGE_Y - 100;
+export const LEFT_TREE_BASE_Y = LEFT_TREE_TRUNK_Y + 50;
 export const RIGHT_TREE_X = COTTAGE_X + 260;
 export const RIGHT_TREE_TRUNK_Y = COTTAGE_Y - 100;
+export const RIGHT_TREE_BASE_Y = RIGHT_TREE_TRUNK_Y + 55;
 
 const PLAYER_FOOTPRINT_RADIUS = 18;
 

@@ -15,14 +15,18 @@ import {
   COTTAGE_X,
   COTTAGE_Y,
   DEBUG_PHYSICS,
+  LEFT_TREE_BASE_Y,
   LEFT_TREE_TRUNK_Y,
   LEFT_TREE_X,
-  RIGHT_TREE_TRUNK_Y,
-  RIGHT_TREE_X,
-  WORLD_HEIGHT,
-  WORLD_WIDTH,
   PLAYER_ASSET_PATH,
   PLAYER_TEXTURE_KEY,
+  RIGHT_TREE_BASE_Y,
+  RIGHT_TREE_TRUNK_Y,
+  RIGHT_TREE_X,
+  TREE_ASSET_PATH,
+  TREE_TEXTURE_KEY,
+  WORLD_HEIGHT,
+  WORLD_WIDTH,
 } from "../constants";
 
 interface ClearingSceneData {
@@ -60,6 +64,17 @@ export class ClearingScene extends Phaser.Scene {
         {
           width: 180,
           height: 190,
+        },
+      );
+    }
+
+    if (!this.textures.exists(TREE_TEXTURE_KEY)) {
+      this.load.svg(
+        TREE_TEXTURE_KEY,
+        TREE_ASSET_PATH,
+        {
+          width: 112,
+          height: 170,
         },
       );
     }
@@ -130,22 +145,17 @@ export class ClearingScene extends Phaser.Scene {
       this.cottageEntrance,
       true,
     );
-    // Draw the circular autumn canopy of the tree on the left.
-    this.add.circle(
-      LEFT_TREE_X,
-      COTTAGE_Y - 165,
-      48,
-      0xb85c38,
-    );
-
-    // Draw the trunk of the tree on the left.
-    this.add.rectangle(
-      LEFT_TREE_X,
-      LEFT_TREE_TRUNK_Y,
-      18,
-      100,
-      0x68452f,
-    );
+    // Reuse one tree texture while keeping this tree's ground position fixed.
+    this.add
+      .image(
+        LEFT_TREE_X,
+        LEFT_TREE_BASE_Y,
+        TREE_TEXTURE_KEY,
+      )
+      .setOrigin(
+        0.5,
+        1,
+      );
 
     // Only the lower trunk blocks movement.
     // The player may move visually beneath the canopy.
@@ -156,22 +166,22 @@ export class ClearingScene extends Phaser.Scene {
       44,
     );
 
-    // Draw the circular autumn canopy of the tree on the right.
-    this.add.circle(
-      RIGHT_TREE_X,
-      COTTAGE_Y - 185,
-      55,
-      0xcf783d,
-    );
-
-    // Draw the trunk of the tree on the right.
-    this.add.rectangle(
-      RIGHT_TREE_X,
-      RIGHT_TREE_TRUNK_Y,
-      20,
-      110,
-      0x68452f,
-    );
+    // Scale and mirror the same texture to create a distinct second tree.
+    this.add
+      .image(
+        RIGHT_TREE_X,
+        RIGHT_TREE_BASE_Y,
+        TREE_TEXTURE_KEY,
+      )
+      .setOrigin(
+        0.5,
+        1,
+      )
+      .setScale(
+        1.08,
+        1.2,
+      )
+      .setFlipX(true);
     this.createStaticObstacle(
       RIGHT_TREE_X,
       RIGHT_TREE_TRUNK_Y + 30,
