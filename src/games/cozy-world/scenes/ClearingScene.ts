@@ -14,11 +14,12 @@ import {
   DEBUG_PHYSICS,
   LEFT_TREE_TRUNK_Y,
   LEFT_TREE_X,
-  PLAYER_RADIUS,
   RIGHT_TREE_TRUNK_Y,
   RIGHT_TREE_X,
   WORLD_HEIGHT,
   WORLD_WIDTH,
+  PLAYER_ASSET_PATH,
+  PLAYER_TEXTURE_KEY,
 } from "../constants";
 
 interface ClearingSceneData {
@@ -27,7 +28,7 @@ interface ClearingSceneData {
 }
 
 export class ClearingScene extends Phaser.Scene {
-  private player!: Phaser.GameObjects.Arc;
+  private player!: Phaser.Physics.Arcade.Sprite;
   private playerController!: PlayerController;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
@@ -35,6 +36,21 @@ export class ClearingScene extends Phaser.Scene {
 
   constructor() {
     super(CLEARING_SCENE_KEY);
+  }
+
+  preload() {
+    if (this.textures.exists(PLAYER_TEXTURE_KEY)) {
+      return;
+    }
+
+    this.load.svg(
+      PLAYER_TEXTURE_KEY,
+      PLAYER_ASSET_PATH,
+      {
+        width: 48,
+        height: 64,
+      },
+    );
   }
 
   create(data: ClearingSceneData = {}) {
@@ -218,20 +234,27 @@ export class ClearingScene extends Phaser.Scene {
 
     const playerSpawnY =
       data.playerY ?? COTTAGE_Y + 250;
-    // Create the temporary player appearance.
-    //
-    // The primitive circle is intentionally simple. It lets us validate movement,
-    // physics, and camera behavior before introducing sprite assets.
-    this.player = this.add.circle(
+    // Create a physics-enabled sprite whose world position represents its feet.
+    this.player = this.physics.add.sprite(
       playerSpawnX,
       playerSpawnY,
-      PLAYER_RADIUS,
-      0xf4d6a0,
+      PLAYER_TEXTURE_KEY,
     );
 
-    // Give the visible circle an Arcade Physics body.
-    this.physics.add.existing(this.player);
-    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    this.player.setOrigin(
+      0.5,
+      1,
+    );
+
+    const playerBody =
+      this.player.body as Phaser.Physics.Arcade.Body;
+
+    // Use a foot-level collision circle instead of the full visible artwork.
+    playerBody.setCircle(
+      18,
+      6,
+      27,
+    );
 
     // Stop the physics body at the configured world boundary.
     playerBody.setCollideWorldBounds(true);
@@ -330,4 +353,3 @@ export class ClearingScene extends Phaser.Scene {
     this.playerController.update();
   }
 }
-

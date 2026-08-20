@@ -1,3 +1,9 @@
+export const PLAYER_TEXTURE_KEY =
+  "cozy-world-player";
+
+export const PLAYER_ASSET_PATH =
+  "/cozy-world/player/player.svg";
+
 export const DEBUG_PHYSICS = import.meta.env.DEV;
 
 export const WORLD_WIDTH = 1200;
@@ -18,7 +24,7 @@ export const LEFT_TREE_TRUNK_Y = COTTAGE_Y - 100;
 export const RIGHT_TREE_X = COTTAGE_X + 260;
 export const RIGHT_TREE_TRUNK_Y = COTTAGE_Y - 100;
 
-export const PLAYER_RADIUS = 18;
+const PLAYER_FOOTPRINT_RADIUS = 18;
 
 export const COTTAGE_ROOM_WIDTH = 720;
 export const COTTAGE_ROOM_HEIGHT = 520;
@@ -38,5 +44,5 @@ export const CLEARING_RETURN_X = COTTAGE_X;
 export const CLEARING_RETURN_Y =
   COTTAGE_ENTRANCE_Y +
   COTTAGE_ENTRANCE_HEIGHT / 2 +
-  PLAYER_RADIUS +
+  PLAYER_FOOTPRINT_RADIUS +
   24;

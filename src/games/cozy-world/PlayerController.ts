@@ -16,7 +16,7 @@ interface MovementKeys {
 
 export class PlayerController {
   private scene: Phaser.Scene;
-  private player: Phaser.GameObjects.Arc;
+  private player: Phaser.Physics.Arcade.Sprite;
 
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private movementKeys: MovementKeys;
@@ -31,7 +31,7 @@ export class PlayerController {
 
   constructor(
     scene: Phaser.Scene,
-    player: Phaser.GameObjects.Arc,
+    player: Phaser.Physics.Arcade.Sprite,
   ) {
     this.scene = scene;
     this.player = player;

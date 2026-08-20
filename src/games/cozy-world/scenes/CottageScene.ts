@@ -16,7 +16,8 @@ import {
   COTTAGE_ROOM_WIDTH,
   COTTAGE_SCENE_KEY,
   DEBUG_PHYSICS,
-  PLAYER_RADIUS,
+  PLAYER_ASSET_PATH,
+  PLAYER_TEXTURE_KEY,
 } from "../constants";
 
 interface ClearingTransitionData {
@@ -25,7 +26,7 @@ interface ClearingTransitionData {
 }
 
 export class CottageScene extends Phaser.Scene {
-  private player!: Phaser.GameObjects.Arc;
+  private player!: Phaser.Physics.Arcade.Sprite;
   private playerController!: PlayerController;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
@@ -35,6 +36,20 @@ export class CottageScene extends Phaser.Scene {
     super(COTTAGE_SCENE_KEY);
   }
 
+  preload() {
+    if (this.textures.exists(PLAYER_TEXTURE_KEY)) {
+      return;
+    }
+
+    this.load.svg(
+      PLAYER_TEXTURE_KEY,
+      PLAYER_ASSET_PATH,
+      {
+        width: 48,
+        height: 64,
+      },
+    );
+  }
   create() {
     this.obstacles = this.physics.add.staticGroup();
 
@@ -152,18 +167,26 @@ export class CottageScene extends Phaser.Scene {
       "Return to clearing",
       0x00ffff,
     );
-    // Represent the player with the same temporary primitive shape.
-    this.player = this.add.circle(
+    // Use the same player texture and foot-level physics body as the clearing.
+    this.player = this.physics.add.sprite(
       COTTAGE_PLAYER_SPAWN_X,
       COTTAGE_PLAYER_SPAWN_Y,
-      PLAYER_RADIUS,
-      0xf4d6a0,
+      PLAYER_TEXTURE_KEY,
     );
 
-    this.physics.add.existing(this.player);
+    this.player.setOrigin(
+      0.5,
+      1,
+    );
 
     const playerBody =
       this.player.body as Phaser.Physics.Arcade.Body;
+
+    playerBody.setCircle(
+      18,
+      6,
+      27,
+    );
 
     playerBody.setCollideWorldBounds(true);
 

@@ -1,0 +1,82 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="48"
+  height="64"
+  viewBox="0 0 48 64"
+>
+  <!-- Hair behind the head -->
+  <ellipse
+    cx="24"
+    cy="17"
+    rx="13"
+    ry="14"
+    fill="#5b382c"
+  />
+
+  <!-- Face -->
+  <circle
+    cx="24"
+    cy="17"
+    r="10"
+    fill="#f1c7a3"
+  />
+
+  <!-- Hair fringe -->
+  <path
+    d="M14 15 Q17 4 25 6 Q34 6 35 16 Q29 12 24 13 Q19 11 14 15"
+    fill="#5b382c"
+  />
+
+  <!-- Autumn coat -->
+  <path
+    d="M13 28 Q24 23 35 28 L39 51 Q31 56 24 56 Q17 56 9 51 Z"
+    fill="#b85c38"
+  />
+
+  <!-- Scarf -->
+  <rect
+    x="16"
+    y="25"
+    width="16"
+    height="7"
+    rx="3"
+    fill="#f2c66d"
+  />
+
+  <!-- Left arm -->
+  <rect
+    x="7"
+    y="31"
+    width="8"
+    height="20"
+    rx="4"
+    fill="#9b4930"
+  />
+
+  <!-- Right arm -->
+  <rect
+    x="33"
+    y="31"
+    width="8"
+    height="20"
+    rx="4"
+    fill="#9b4930"
+  />
+
+  <!-- Boots -->
+  <ellipse
+    cx="17"
+    cy="58"
+    rx="7"
+    ry="4"
+    fill="#4b2d24"
+  />
+
+  <ellipse
+    cx="31"
+    cy="58"
+    rx="7"
+    ry="4"
+    fill="#4b2d24"
+  />
+</svg>
