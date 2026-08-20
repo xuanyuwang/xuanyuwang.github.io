@@ -56,10 +56,27 @@ different game space or mode.
 
 ## Input strategy
 
-Keyboard and touch controls will produce the same abstract movement intent.
+Keyboard and touch controls produce the same abstract movement intent.
 
 Game logic should not contain separate movement implementations for keyboard
 and touch input.
+
+## Collision strategy
+
+The controllable player has a dynamic Arcade Physics body. Scenery that should
+block movement is represented by invisible rectangles in an Arcade Physics
+Static Group.
+
+Visible scenery and collision geometry are intentionally separate:
+
+- The cottage currently uses one simple rectangular obstacle.
+- Trees use small obstacles around the lower trunk rather than the full canopy.
+- The player can therefore move beneath a tree canopy while still being blocked
+  by the part of the trunk that meets the ground.
+
+Collision geometry may be rendered during development while its size and
+position are being tuned. Both the custom obstacle shapes and Phaser's Arcade
+Physics debug display should be disabled for normal play.
 
 ## Asset strategy
 
@@ -67,3 +84,9 @@ Primitive Phaser shapes are used during the foundation phase. Art assets will
 be introduced after rendering, input, and scene structure are working.
 
 This keeps visual asset problems separate from game-system problems.
+
+## Persistence
+
+Cozy World v0.1 does not save game state locally or remotely. Runtime changes,
+including planted trees and lamp or fireplace state, reset when the page is
+refreshed.

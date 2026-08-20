@@ -18,17 +18,17 @@ The game has no combat, failure state, monetization, or pressure.
 - One compact outdoor map
 - One controllable character
 - One cottage interior
-- Keyboard movement
+- Keyboard and phone touch movement
 - Day-to-night cycle
 - Rain
 - One lamp or fireplace interaction
 - Tree planting
-- Device-local saving
 
 ## Explicitly out of scope
 
 - Accounts
 - Backend services
+- Local saving
 - Cloud saving
 - Multiplayer
 - Combat
@@ -52,8 +52,10 @@ The site is statically built and deployed through GitHub Pages.
 - Astro provides the page and deployment structure.
 - TypeScript contains the game logic.
 - Phaser provides rendering, input, scenes, collisions, animation, and audio.
-- Browser local storage preserves small amounts of player state.
 - Game assets live under `public/cozy-world/`.
+
+World changes exist only for the current browser session in v0.1. Refreshing
+the page starts a fresh world.
 
 ## First playable milestone
 
