@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { PlayerController } from "./PlayerController";
 
 const DEBUG_PHYSICS = import.meta.env.DEV;
 const COTTAGE_ROOM_WIDTH = 720;
@@ -20,7 +21,6 @@ const LEFT_TREE_TRUNK_Y = cottageY - 100;
 const RIGHT_TREE_X = cottageX + 260;
 const RIGHT_TREE_TRUNK_Y = cottageY - 100;
 const GAME_CONTAINER_ID = "cozy-world-game";
-const PLAYER_SPEED = 180;
 const PLAYER_RADIUS = 18;
 const COTTAGE_PLAYER_SPAWN_X = COTTAGE_ROOM_CENTER_X;
 
@@ -38,19 +38,6 @@ const CLEARING_RETURN_Y =
   COTTAGE_ENTRANCE_HEIGHT / 2 +
   PLAYER_RADIUS +
   24;
-const JOYSTICK_RADIUS = 52; // maximum thumb travel
-const JOYSTICK_THUMB_RADIUS = 22; // visible thumb size
-const JOYSTICK_MARGIN = 28; // distance from canvas edge
-const JOYSTICK_DEAD_ZONE = 8; // ignores tiny accidental movements
-const TOUCH_LAYOUT_BREAKPOINT = 600; // show controls in narrow test windows
-
-interface MovementKeys {
-  up: Phaser.Input.Keyboard.Key;
-  down: Phaser.Input.Keyboard.Key;
-  left: Phaser.Input.Keyboard.Key;
-  right: Phaser.Input.Keyboard.Key;
-}
-
 interface ClearingSceneData {
   playerX?: number;
   playerY?: number;
@@ -116,16 +103,7 @@ function addDebugPositionMarker(
 }
 class ClearingScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Arc;
-  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private movementKeys!: MovementKeys;
-
-  private keyboardIntent = new Phaser.Math.Vector2();
-  private touchIntent = new Phaser.Math.Vector2();
-  private movementIntent = new Phaser.Math.Vector2();
-
-  private joystickBase!: Phaser.GameObjects.Arc;
-  private joystickThumb!: Phaser.GameObjects.Arc;
-  private activeJoystickPointerId: number | null = null;
+  private playerController!: PlayerController;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
   private cottageEntrance!: Phaser.GameObjects.Rectangle;
@@ -346,24 +324,10 @@ class ClearingScene extends Phaser.Scene {
       undefined,
       this,
     );
-    const keyboard = this.input.keyboard;
-
-    if (!keyboard) {
-      throw new Error("Keyboard input is unavailable");
-    }
-
-    // Arrow-key input provided by Phaser.
-    this.cursors = keyboard.createCursorKeys();
-
-    // WASD input represented with the same directional structure.
-    this.movementKeys = {
-      up: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-      down: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
-      left: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-      right: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-    };
-
-    this.createTouchControls();
+    this.playerController = new PlayerController(
+      this,
+      this.player,
+    );
 
     // Draw a screen-level game label.
     //
@@ -437,304 +401,14 @@ class ClearingScene extends Phaser.Scene {
     return obstacle;
   }
 
-  private createTouchControls() {
-    // The base marks the joystick's available movement area.
-    this.joystickBase = this.add
-      .circle(
-        0,
-        0,
-        JOYSTICK_RADIUS,
-        0x1f2a1f,
-        0.48,
-      )
-      .setStrokeStyle(
-        3,
-        0xfff2d2,
-        0.7,
-      )
-      .setScrollFactor(0);
-
-    // The thumb shows the direction currently selected by the player.
-    this.joystickThumb = this.add
-      .circle(
-        0,
-        0,
-        JOYSTICK_THUMB_RADIUS,
-        0xfff2d2,
-        0.8,
-      )
-      .setScrollFactor(0);
-
-    this.positionTouchControls();
-
-    // Reposition the joystick whenever Phaser resizes its canvas.
-    this.scale.on(
-      Phaser.Scale.Events.RESIZE,
-      this.positionTouchControls,
-      this,
-    );
-
-    // Prevent a Scale Manager listener from surviving if this scene shuts down.
-    this.events.once(
-      Phaser.Scenes.Events.SHUTDOWN,
-      () => {
-        this.scale.off(
-          Phaser.Scale.Events.RESIZE,
-          this.positionTouchControls,
-          this,
-        );
-      },
-    );
-
-    this.input.on(
-      Phaser.Input.Events.POINTER_DOWN,
-      this.handleJoystickPointerDown,
-      this,
-    );
-
-    this.input.on(
-      Phaser.Input.Events.POINTER_MOVE,
-      this.handleJoystickPointerMove,
-      this,
-    );
-
-    this.input.on(
-      Phaser.Input.Events.POINTER_UP,
-      this.handleJoystickPointerUp,
-      this,
-    );
-  }
-
-  private positionTouchControls() {
-    const shouldShowTouchControls =
-      this.scale.width <= TOUCH_LAYOUT_BREAKPOINT ||
-      this.sys.game.device.input.touch;
-
-    this.joystickBase.setVisible(shouldShowTouchControls);
-    this.joystickThumb.setVisible(shouldShowTouchControls);
-
-    const joystickX =
-      JOYSTICK_MARGIN + JOYSTICK_RADIUS;
-
-    const joystickY =
-      this.scale.height -
-      JOYSTICK_MARGIN -
-      JOYSTICK_RADIUS;
-
-    this.joystickBase.setPosition(
-      joystickX,
-      joystickY,
-    );
-
-    // Keep the thumb centered unless a pointer is actively controlling it.
-    if (this.activeJoystickPointerId === null) {
-      this.joystickThumb.setPosition(
-        joystickX,
-        joystickY,
-      );
-    }
-  }
-
-  private handleJoystickPointerDown(
-    pointer: Phaser.Input.Pointer,
-  ) {
-    if (!this.joystickBase.visible) {
-      return;
-    }
-
-    if (this.activeJoystickPointerId !== null) {
-      return;
-    }
-
-    const distanceFromBase =
-      Phaser.Math.Distance.Between(
-        pointer.x,
-        pointer.y,
-        this.joystickBase.x,
-        this.joystickBase.y,
-      );
-
-    const activationRadius =
-      JOYSTICK_RADIUS + JOYSTICK_THUMB_RADIUS;
-
-    // Touches elsewhere in the game should remain available for future
-    // interactions such as planting or toggling a lamp.
-    if (distanceFromBase > activationRadius) {
-      return;
-    }
-
-    this.activeJoystickPointerId = pointer.id;
-    this.updateTouchIntent(pointer);
-  }
-
-  private handleJoystickPointerUp(
-    pointer: Phaser.Input.Pointer,
-  ) {
-    if (pointer.id !== this.activeJoystickPointerId) {
-      return;
-    }
-
-    this.activeJoystickPointerId = null;
-    this.touchIntent.set(0, 0);
-
-    this.joystickThumb.setPosition(
-      this.joystickBase.x,
-      this.joystickBase.y,
-    );
-  }
-  private handleJoystickPointerMove(
-    pointer: Phaser.Input.Pointer,
-  ) {
-    if (pointer.id !== this.activeJoystickPointerId) {
-      return;
-    }
-
-    this.updateTouchIntent(pointer);
-  }
-
-  private updateTouchIntent(
-    pointer: Phaser.Input.Pointer,
-  ) {
-    const horizontalDistance =
-      pointer.x - this.joystickBase.x;
-
-    const verticalDistance =
-      pointer.y - this.joystickBase.y;
-
-    const pointerDistance = Math.hypot(
-      horizontalDistance,
-      verticalDistance,
-    );
-
-    // Ignore tiny movements near the center so an imperfect stationary touch
-    // does not make the player drift.
-    if (pointerDistance <= JOYSTICK_DEAD_ZONE) {
-      this.touchIntent.set(0, 0);
-
-      this.joystickThumb.setPosition(
-        this.joystickBase.x,
-        this.joystickBase.y,
-      );
-
-      return;
-    }
-
-    // Convert the pointer displacement into a unit direction.
-    this.touchIntent
-      .set(
-        horizontalDistance,
-        verticalDistance,
-      )
-      .normalize();
-
-    // Restrict the visible thumb to the circular joystick boundary.
-    const thumbDistance = Math.min(
-      pointerDistance,
-      JOYSTICK_RADIUS,
-    );
-
-    this.joystickThumb.setPosition(
-      this.joystickBase.x +
-      this.touchIntent.x * thumbDistance,
-      this.joystickBase.y +
-      this.touchIntent.y * thumbDistance,
-    );
-  }
-
-  // Convert keyboard state into a normalized direction
-  private readKeyboardIntent(): Phaser.Math.Vector2 {
-    const isLeftPressed =
-      this.cursors.left.isDown ||
-      this.movementKeys.left.isDown;
-
-    const isRightPressed =
-      this.cursors.right.isDown ||
-      this.movementKeys.right.isDown;
-
-    const isUpPressed =
-      this.cursors.up.isDown ||
-      this.movementKeys.up.isDown;
-
-    const isDownPressed =
-      this.cursors.down.isDown ||
-      this.movementKeys.down.isDown;
-
-    let horizontalDirection = 0;
-    let verticalDirection = 0;
-
-    // Move horizontally only when exactly one horizontal direction is pressed.
-    //
-    // Pressing left and right together cancels horizontal movement.
-    if (isLeftPressed && !isRightPressed) {
-      horizontalDirection = -1;
-    } else if (isRightPressed && !isLeftPressed) {
-      horizontalDirection = 1;
-    }
-
-    // Move vertically only when exactly one vertical direction is pressed.
-    //
-    // In screen coordinates, negative y is upward and positive y is downward.
-    // Pressing up and down together cancels vertical movement.
-    if (isUpPressed && !isDownPressed) {
-      verticalDirection = -1;
-    } else if (isDownPressed && !isUpPressed) {
-      verticalDirection = 1;
-    }
-
-    this.keyboardIntent.set(
-      horizontalDirection,
-      verticalDirection,
-    );
-
-    // Normalize diagonal directions so moving diagonally is not faster than
-    // moving horizontally or vertically.
-    if (this.keyboardIntent.lengthSq() > 0) {
-      this.keyboardIntent.normalize();
-    }
-
-    return this.keyboardIntent;
-  }
-
-  private readMovementIntent(): Phaser.Math.Vector2 {
-    const keyboardIntent =
-      this.readKeyboardIntent();
-
-    // Keyboard takes priority when it is actively producing a direction.
-    if (keyboardIntent.lengthSq() > 0) {
-      return this.movementIntent.copy(
-        keyboardIntent,
-      );
-    }
-
-    return this.movementIntent.copy(
-      this.touchIntent,
-    );
-  }
-
   update() {
-    const movementIntent = this.readMovementIntent();
-    const playerBody =
-      this.player.body as Phaser.Physics.Arcade.Body;
-
-    playerBody.setVelocity(
-      movementIntent.x * PLAYER_SPEED,
-      movementIntent.y * PLAYER_SPEED,
-    );
+    this.playerController.update();
   }
 }
 
 class CottageScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Arc;
-  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private movementKeys!: MovementKeys;
-
-  private keyboardIntent = new Phaser.Math.Vector2();
-  private touchIntent = new Phaser.Math.Vector2();
-  private movementIntent = new Phaser.Math.Vector2();
-
-  private joystickBase!: Phaser.GameObjects.Arc;
-  private joystickThumb!: Phaser.GameObjects.Arc;
-  private activeJoystickPointerId: number | null = null;
+  private playerController!: PlayerController;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
   private cottageExit!: Phaser.GameObjects.Rectangle;
@@ -903,22 +577,10 @@ class CottageScene extends Phaser.Scene {
       this,
     );
 
-    const keyboard = this.input.keyboard;
-
-    if (!keyboard) {
-      throw new Error("Keyboard input is unavailable");
-    }
-
-    this.cursors = keyboard.createCursorKeys();
-
-    this.movementKeys = {
-      up: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-      down: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
-      left: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-      right: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-    };
-
-    this.createTouchControls();
+    this.playerController = new PlayerController(
+      this,
+      this.player,
+    );
 
     this.cameras.main.startFollow(
       this.player,
@@ -984,271 +646,10 @@ class CottageScene extends Phaser.Scene {
     return obstacle;
   }
 
-  private createTouchControls() {
-    this.joystickBase = this.add
-      .circle(
-        0,
-        0,
-        JOYSTICK_RADIUS,
-        0x1f2a1f,
-        0.48,
-      )
-      .setStrokeStyle(
-        3,
-        0xfff2d2,
-        0.7,
-      )
-      .setScrollFactor(0);
-
-    this.joystickThumb = this.add
-      .circle(
-        0,
-        0,
-        JOYSTICK_THUMB_RADIUS,
-        0xfff2d2,
-        0.8,
-      )
-      .setScrollFactor(0);
-
-    this.positionTouchControls();
-
-    this.scale.on(
-      Phaser.Scale.Events.RESIZE,
-      this.positionTouchControls,
-      this,
-    );
-
-    this.events.once(
-      Phaser.Scenes.Events.SHUTDOWN,
-      () => {
-        this.scale.off(
-          Phaser.Scale.Events.RESIZE,
-          this.positionTouchControls,
-          this,
-        );
-      },
-    );
-
-    this.input.on(
-      Phaser.Input.Events.POINTER_DOWN,
-      this.handleJoystickPointerDown,
-      this,
-    );
-
-    this.input.on(
-      Phaser.Input.Events.POINTER_MOVE,
-      this.handleJoystickPointerMove,
-      this,
-    );
-
-    this.input.on(
-      Phaser.Input.Events.POINTER_UP,
-      this.handleJoystickPointerUp,
-      this,
-    );
-  }
-
-  private positionTouchControls() {
-    const shouldShowTouchControls =
-      this.scale.width <= TOUCH_LAYOUT_BREAKPOINT ||
-      this.sys.game.device.input.touch;
-
-    this.joystickBase.setVisible(shouldShowTouchControls);
-    this.joystickThumb.setVisible(shouldShowTouchControls);
-
-    const joystickX =
-      JOYSTICK_MARGIN + JOYSTICK_RADIUS;
-
-    const joystickY =
-      this.scale.height -
-      JOYSTICK_MARGIN -
-      JOYSTICK_RADIUS;
-
-    this.joystickBase.setPosition(
-      joystickX,
-      joystickY,
-    );
-
-    if (this.activeJoystickPointerId === null) {
-      this.joystickThumb.setPosition(
-        joystickX,
-        joystickY,
-      );
-    }
-  }
-
-  private handleJoystickPointerDown(
-    pointer: Phaser.Input.Pointer,
-  ) {
-    if (!this.joystickBase.visible) {
-      return;
-    }
-
-    if (this.activeJoystickPointerId !== null) {
-      return;
-    }
-
-    const distanceFromBase =
-      Phaser.Math.Distance.Between(
-        pointer.x,
-        pointer.y,
-        this.joystickBase.x,
-        this.joystickBase.y,
-      );
-
-    const activationRadius =
-      JOYSTICK_RADIUS + JOYSTICK_THUMB_RADIUS;
-
-    if (distanceFromBase > activationRadius) {
-      return;
-    }
-
-    this.activeJoystickPointerId = pointer.id;
-    this.updateTouchIntent(pointer);
-  }
-
-  private handleJoystickPointerUp(
-    pointer: Phaser.Input.Pointer,
-  ) {
-    if (pointer.id !== this.activeJoystickPointerId) {
-      return;
-    }
-
-    this.activeJoystickPointerId = null;
-    this.touchIntent.set(0, 0);
-
-    this.joystickThumb.setPosition(
-      this.joystickBase.x,
-      this.joystickBase.y,
-    );
-  }
-
-  private handleJoystickPointerMove(
-    pointer: Phaser.Input.Pointer,
-  ) {
-    if (pointer.id !== this.activeJoystickPointerId) {
-      return;
-    }
-
-    this.updateTouchIntent(pointer);
-  }
-
-  private updateTouchIntent(
-    pointer: Phaser.Input.Pointer,
-  ) {
-    const horizontalDistance =
-      pointer.x - this.joystickBase.x;
-
-    const verticalDistance =
-      pointer.y - this.joystickBase.y;
-
-    const pointerDistance = Math.hypot(
-      horizontalDistance,
-      verticalDistance,
-    );
-
-    if (pointerDistance <= JOYSTICK_DEAD_ZONE) {
-      this.touchIntent.set(0, 0);
-
-      this.joystickThumb.setPosition(
-        this.joystickBase.x,
-        this.joystickBase.y,
-      );
-
-      return;
-    }
-
-    this.touchIntent
-      .set(
-        horizontalDistance,
-        verticalDistance,
-      )
-      .normalize();
-
-    const thumbDistance = Math.min(
-      pointerDistance,
-      JOYSTICK_RADIUS,
-    );
-
-    this.joystickThumb.setPosition(
-      this.joystickBase.x +
-      this.touchIntent.x * thumbDistance,
-      this.joystickBase.y +
-      this.touchIntent.y * thumbDistance,
-    );
-  }
-
-  private readKeyboardIntent(): Phaser.Math.Vector2 {
-    const isLeftPressed =
-      this.cursors.left.isDown ||
-      this.movementKeys.left.isDown;
-
-    const isRightPressed =
-      this.cursors.right.isDown ||
-      this.movementKeys.right.isDown;
-
-    const isUpPressed =
-      this.cursors.up.isDown ||
-      this.movementKeys.up.isDown;
-
-    const isDownPressed =
-      this.cursors.down.isDown ||
-      this.movementKeys.down.isDown;
-
-    let horizontalDirection = 0;
-    let verticalDirection = 0;
-
-    if (isLeftPressed && !isRightPressed) {
-      horizontalDirection = -1;
-    } else if (isRightPressed && !isLeftPressed) {
-      horizontalDirection = 1;
-    }
-
-    if (isUpPressed && !isDownPressed) {
-      verticalDirection = -1;
-    } else if (isDownPressed && !isUpPressed) {
-      verticalDirection = 1;
-    }
-
-    this.keyboardIntent.set(
-      horizontalDirection,
-      verticalDirection,
-    );
-
-    if (this.keyboardIntent.lengthSq() > 0) {
-      this.keyboardIntent.normalize();
-    }
-
-    return this.keyboardIntent;
-  }
-
-  private readMovementIntent(): Phaser.Math.Vector2 {
-    const keyboardIntent =
-      this.readKeyboardIntent();
-
-    if (keyboardIntent.lengthSq() > 0) {
-      return this.movementIntent.copy(
-        keyboardIntent,
-      );
-    }
-
-    return this.movementIntent.copy(
-      this.touchIntent,
-    );
-  }
-
   update() {
-    const movementIntent = this.readMovementIntent();
-    const playerBody =
-      this.player.body as Phaser.Physics.Arcade.Body;
-
-    playerBody.setVelocity(
-      movementIntent.x * PLAYER_SPEED,
-      movementIntent.y * PLAYER_SPEED,
-    );
+    this.playerController.update();
   }
 }
-
 const container = document.getElementById(GAME_CONTAINER_ID);
 
 if (!container) {
