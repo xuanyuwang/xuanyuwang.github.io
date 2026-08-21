@@ -8,15 +8,17 @@ import {
   COTTAGE_EXIT_HEIGHT,
   COTTAGE_EXIT_WIDTH,
   COTTAGE_EXIT_Y,
-  COTTAGE_INTERIOR_ASSET_PATH,
-  COTTAGE_INTERIOR_TEXTURE_KEY,
   COTTAGE_PLAYER_SPAWN_X,
   COTTAGE_PLAYER_SPAWN_Y,
+  COTTAGE_RUG_ASSET_PATH,
+  COTTAGE_RUG_TEXTURE_KEY,
   COTTAGE_ROOM_CENTER_X,
   COTTAGE_ROOM_CENTER_Y,
   COTTAGE_ROOM_HEIGHT,
   COTTAGE_ROOM_WIDTH,
   COTTAGE_SCENE_KEY,
+  COTTAGE_TABLE_ASSET_PATH,
+  COTTAGE_TABLE_TEXTURE_KEY,
   DEBUG_PHYSICS,
   PLAYER_ASSET_PATH,
   PLAYER_COLLIDER_OFFSET_X,
@@ -25,6 +27,7 @@ import {
   PLAYER_TEXTURE_HEIGHT,
   PLAYER_TEXTURE_KEY,
   PLAYER_TEXTURE_WIDTH,
+  UI_DEPTH,
 } from "../constants";
 
 interface ClearingTransitionData {
@@ -55,13 +58,24 @@ export class CottageScene extends Phaser.Scene {
       );
     }
 
-    if (!this.textures.exists(COTTAGE_INTERIOR_TEXTURE_KEY)) {
+    if (!this.textures.exists(COTTAGE_RUG_TEXTURE_KEY)) {
       this.load.svg(
-        COTTAGE_INTERIOR_TEXTURE_KEY,
-        COTTAGE_INTERIOR_ASSET_PATH,
+        COTTAGE_RUG_TEXTURE_KEY,
+        COTTAGE_RUG_ASSET_PATH,
         {
           width: 320,
-          height: 250,
+          height: 190,
+        },
+      );
+    }
+
+    if (!this.textures.exists(COTTAGE_TABLE_TEXTURE_KEY)) {
+      this.load.svg(
+        COTTAGE_TABLE_TEXTURE_KEY,
+        COTTAGE_TABLE_ASSET_PATH,
+        {
+          width: 160,
+          height: 110,
         },
       );
     }
@@ -144,18 +158,33 @@ export class CottageScene extends Phaser.Scene {
     const tableY = COTTAGE_ROOM_CENTER_Y - 70;
     const tableWidth = 130;
     const tableHeight = 70;
+    const tableBaseY = tableY + 50;
 
-    // Draw the rug and table as one composed visual asset.
+    // The rug is floor decoration, so it always remains behind the player.
     this.add
       .image(
         COTTAGE_ROOM_CENTER_X,
         COTTAGE_ROOM_CENTER_Y + 90,
-        COTTAGE_INTERIOR_TEXTURE_KEY,
+        COTTAGE_RUG_TEXTURE_KEY,
       )
       .setOrigin(
         0.5,
         1,
-      );
+      )
+      .setDepth(1);
+
+    // The table participates in Y sorting because the player can pass around it.
+    this.add
+      .image(
+        tableX,
+        tableBaseY,
+        COTTAGE_TABLE_TEXTURE_KEY,
+      )
+      .setOrigin(
+        0.5,
+        1,
+      )
+      .setDepth(tableBaseY);
 
     // Keep the physical table footprint independent from its artwork.
     this.createStaticObstacle(
@@ -190,6 +219,8 @@ export class CottageScene extends Phaser.Scene {
       0.5,
       1,
     );
+
+    this.player.setDepth(this.player.y);
 
     const playerBody =
       this.player.body as Phaser.Physics.Arcade.Body;
@@ -253,7 +284,8 @@ export class CottageScene extends Phaser.Scene {
           fontSize: "28px",
         },
       )
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setDepth(UI_DEPTH);
 
     this.add
       .text(
@@ -266,7 +298,8 @@ export class CottageScene extends Phaser.Scene {
           fontSize: "16px",
         },
       )
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setDepth(UI_DEPTH);
   }
 
   private leaveCottage() {
@@ -301,5 +334,6 @@ export class CottageScene extends Phaser.Scene {
 
   update() {
     this.playerController.update();
+    this.player.setDepth(this.player.y);
   }
 }

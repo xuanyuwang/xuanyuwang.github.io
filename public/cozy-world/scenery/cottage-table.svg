@@ -1,0 +1,40 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="160"
+  height="110"
+  viewBox="80 30 160 110"
+>
+  <!-- The shadow visually connects the table to the floor. -->
+  <ellipse
+    cx="160"
+    cy="103"
+    rx="78"
+    ry="40"
+    fill="#39251f"
+    opacity="0.28"
+  />
+
+  <!-- The tabletop corresponds approximately to the physics footprint. -->
+  <rect
+    x="92"
+    y="40"
+    width="136"
+    height="72"
+    rx="10"
+    fill="#845333"
+    stroke="#40291f"
+    stroke-width="7"
+  />
+
+  <path
+    d="M111 58 H209"
+    fill="none"
+    stroke="#ac7548"
+    stroke-width="6"
+    stroke-linecap="round"
+  />
+
+  <!-- The legs establish the table's visual ground position. -->
+  <rect x="102" y="107" width="17" height="30" rx="5" fill="#513323" />
+  <rect x="201" y="107" width="17" height="30" rx="5" fill="#513323" />
+</svg>

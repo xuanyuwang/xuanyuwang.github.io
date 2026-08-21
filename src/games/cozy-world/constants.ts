@@ -22,11 +22,17 @@ export const TREE_TEXTURE_KEY =
 export const TREE_ASSET_PATH =
   "/cozy-world/scenery/autumn-tree.svg";
 
-export const COTTAGE_INTERIOR_TEXTURE_KEY =
-  "cozy-world-cottage-interior";
+export const COTTAGE_RUG_TEXTURE_KEY =
+  "cozy-world-cottage-rug";
 
-export const COTTAGE_INTERIOR_ASSET_PATH =
-  "/cozy-world/scenery/cottage-interior.svg";
+export const COTTAGE_RUG_ASSET_PATH =
+  "/cozy-world/scenery/cottage-rug.svg";
+
+export const COTTAGE_TABLE_TEXTURE_KEY =
+  "cozy-world-cottage-table";
+
+export const COTTAGE_TABLE_ASSET_PATH =
+  "/cozy-world/scenery/cottage-table.svg";
 
 export const DEBUG_PHYSICS = import.meta.env.DEV;
 export const UI_DEPTH = 2000;
