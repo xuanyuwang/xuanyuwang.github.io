@@ -19,7 +19,12 @@ import {
   COTTAGE_SCENE_KEY,
   DEBUG_PHYSICS,
   PLAYER_ASSET_PATH,
+  PLAYER_COLLIDER_OFFSET_X,
+  PLAYER_COLLIDER_OFFSET_Y,
+  PLAYER_COLLIDER_RADIUS,
+  PLAYER_TEXTURE_HEIGHT,
   PLAYER_TEXTURE_KEY,
+  PLAYER_TEXTURE_WIDTH,
 } from "../constants";
 
 interface ClearingTransitionData {
@@ -44,8 +49,8 @@ export class CottageScene extends Phaser.Scene {
         PLAYER_TEXTURE_KEY,
         PLAYER_ASSET_PATH,
         {
-          width: 48,
-          height: 64,
+          width: PLAYER_TEXTURE_WIDTH,
+          height: PLAYER_TEXTURE_HEIGHT,
         },
       );
     }
@@ -190,9 +195,9 @@ export class CottageScene extends Phaser.Scene {
       this.player.body as Phaser.Physics.Arcade.Body;
 
     playerBody.setCircle(
-      18,
-      6,
-      27,
+      PLAYER_COLLIDER_RADIUS,
+      PLAYER_COLLIDER_OFFSET_X,
+      PLAYER_COLLIDER_OFFSET_Y,
     );
 
     playerBody.setCollideWorldBounds(true);

@@ -19,7 +19,12 @@ import {
   LEFT_TREE_TRUNK_Y,
   LEFT_TREE_X,
   PLAYER_ASSET_PATH,
+  PLAYER_COLLIDER_OFFSET_X,
+  PLAYER_COLLIDER_OFFSET_Y,
+  PLAYER_COLLIDER_RADIUS,
+  PLAYER_TEXTURE_HEIGHT,
   PLAYER_TEXTURE_KEY,
+  PLAYER_TEXTURE_WIDTH,
   RIGHT_TREE_BASE_Y,
   RIGHT_TREE_TRUNK_Y,
   RIGHT_TREE_X,
@@ -51,8 +56,8 @@ export class ClearingScene extends Phaser.Scene {
         PLAYER_TEXTURE_KEY,
         PLAYER_ASSET_PATH,
         {
-          width: 48,
-          height: 64,
+          width: PLAYER_TEXTURE_WIDTH,
+          height: PLAYER_TEXTURE_HEIGHT,
         },
       );
     }
@@ -233,9 +238,9 @@ export class ClearingScene extends Phaser.Scene {
 
     // Use a foot-level collision circle instead of the full visible artwork.
     playerBody.setCircle(
-      18,
-      6,
-      27,
+      PLAYER_COLLIDER_RADIUS,
+      PLAYER_COLLIDER_OFFSET_X,
+      PLAYER_COLLIDER_OFFSET_Y,
     );
 
     // Stop the physics body at the configured world boundary.
