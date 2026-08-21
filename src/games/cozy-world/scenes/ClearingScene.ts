@@ -30,6 +30,7 @@ import {
   RIGHT_TREE_X,
   TREE_ASSET_PATH,
   TREE_TEXTURE_KEY,
+  UI_DEPTH,
   WORLD_HEIGHT,
   WORLD_WIDTH,
 } from "../constants";
@@ -120,7 +121,8 @@ export class ClearingScene extends Phaser.Scene {
       .setOrigin(
         0.5,
         1,
-      );
+      )
+      .setDepth(COTTAGE_BASE_Y);
 
     // Block the complete visible footprint of the cottage.
     //
@@ -160,7 +162,8 @@ export class ClearingScene extends Phaser.Scene {
       .setOrigin(
         0.5,
         1,
-      );
+      )
+      .setDepth(LEFT_TREE_BASE_Y);
 
     // Only the lower trunk blocks movement.
     // The player may move visually beneath the canopy.
@@ -186,7 +189,8 @@ export class ClearingScene extends Phaser.Scene {
         1.08,
         1.2,
       )
-      .setFlipX(true);
+      .setFlipX(true)
+      .setDepth(RIGHT_TREE_BASE_Y);
     this.createStaticObstacle(
       RIGHT_TREE_X,
       RIGHT_TREE_TRUNK_Y + 30,
@@ -233,6 +237,8 @@ export class ClearingScene extends Phaser.Scene {
       1,
     );
 
+    this.player.setDepth(this.player.y);
+
     const playerBody =
       this.player.body as Phaser.Physics.Arcade.Body;
 
@@ -275,7 +281,8 @@ export class ClearingScene extends Phaser.Scene {
         fontSize: "28px",
       })
       .setShadow(2, 2, "#3a2c24", 2)
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setDepth(UI_DEPTH);
 
     // Draw supporting screen-level text below the title.
     this.add
@@ -284,7 +291,8 @@ export class ClearingScene extends Phaser.Scene {
         fontFamily: "Georgia, serif",
         fontSize: "16px",
       })
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setDepth(UI_DEPTH);
 
     // Prevent physics-enabled objects from leaving the defined game world.
     this.physics.world.setBounds(
@@ -338,5 +346,6 @@ export class ClearingScene extends Phaser.Scene {
 
   update() {
     this.playerController.update();
+    this.player.setDepth(this.player.y);
   }
 }

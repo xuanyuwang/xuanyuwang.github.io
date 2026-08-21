@@ -29,6 +29,7 @@ export const COTTAGE_INTERIOR_ASSET_PATH =
   "/cozy-world/scenery/cottage-interior.svg";
 
 export const DEBUG_PHYSICS = import.meta.env.DEV;
+export const UI_DEPTH = 2000;
 
 export const WORLD_WIDTH = 1200;
 export const WORLD_HEIGHT = 800;

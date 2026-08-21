@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { UI_DEPTH } from "./constants";
 
 const PLAYER_SPEED = 180;
 const JOYSTICK_RADIUS = 52;
@@ -64,7 +65,8 @@ export class PlayerController {
         0xfff2d2,
         0.7,
       )
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setDepth(UI_DEPTH);
 
     this.joystickThumb = scene.add
       .circle(
@@ -74,7 +76,8 @@ export class PlayerController {
         0xfff2d2,
         0.8,
       )
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setDepth(UI_DEPTH);
 
     this.positionTouchControls();
 
