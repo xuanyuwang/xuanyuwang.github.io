@@ -1,7 +1,9 @@
 import Phaser from "phaser";
 import { PlayerController } from "../PlayerController";
+import { WorldClock } from "../WorldClock";
 import { addDebugPositionMarker } from "../debug";
 import {
+  ATMOSPHERE_DEPTH,
   CLEARING_RETURN_X,
   CLEARING_RETURN_Y,
   CLEARING_SCENE_KEY,
@@ -43,6 +45,9 @@ interface ClearingSceneData {
 export class ClearingScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private playerController!: PlayerController;
+  private worldClock!: WorldClock;
+  private atmosphere!: Phaser.GameObjects.Rectangle;
+  private timeDebugText?: Phaser.GameObjects.Text;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
   private cottageEntrance!: Phaser.GameObjects.Rectangle;
@@ -302,6 +307,61 @@ export class ClearingScene extends Phaser.Scene {
       WORLD_HEIGHT,
     );
 
+    this.worldClock = new WorldClock(this.game);
+
+    this.atmosphere = this.add
+      .rectangle(
+        0,
+        0,
+        1,
+        1,
+        0x263450,
+      )
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(ATMOSPHERE_DEPTH)
+      .setBlendMode(Phaser.BlendModes.MULTIPLY);
+
+    this.resizeAtmosphere();
+
+    this.scale.on(
+      Phaser.Scale.Events.RESIZE,
+      this.resizeAtmosphere,
+      this,
+    );
+
+    this.events.once(
+      Phaser.Scenes.Events.SHUTDOWN,
+      () => {
+        this.scale.off(
+          Phaser.Scale.Events.RESIZE,
+          this.resizeAtmosphere,
+          this,
+        );
+      },
+    );
+
+    if (DEBUG_PHYSICS) {
+      this.timeDebugText = this.add
+        .text(
+          24,
+          90,
+          "",
+          {
+            backgroundColor: "#000000aa",
+            color: "#ffffff",
+            fontFamily: "monospace",
+            fontSize: "14px",
+            padding: {
+              x: 6,
+              y: 4,
+            },
+          },
+        )
+        .setScrollFactor(0)
+        .setDepth(UI_DEPTH);
+    }
+
     // Prevent the camera from showing space outside the game world.
     this.cameras.main.setBounds(
       0,
@@ -322,6 +382,13 @@ export class ClearingScene extends Phaser.Scene {
 
   private enterCottage() {
     this.scene.start(COTTAGE_SCENE_KEY);
+  }
+
+  private resizeAtmosphere() {
+    this.atmosphere.setDisplaySize(
+      this.scale.width,
+      this.scale.height,
+    );
   }
 
   private createStaticObstacle(
@@ -347,5 +414,15 @@ export class ClearingScene extends Phaser.Scene {
   update() {
     this.playerController.update();
     this.player.setDepth(this.player.y);
+
+    const worldTime = this.worldClock.read();
+
+    this.atmosphere.setAlpha(
+      worldTime.darkness,
+    );
+
+    this.timeDebugText?.setText(
+      `${worldTime.label} · ${Math.round(worldTime.phase * 100)}%`,
+    );
   }
 }
