@@ -1,5 +1,7 @@
 import Phaser from "phaser";
+import { AtmosphereOverlay } from "../AtmosphereOverlay";
 import { PlayerController } from "../PlayerController";
+import { WorldClock } from "../WorldClock";
 import { addDebugPositionMarker } from "../debug";
 import {
   CLEARING_RETURN_X,
@@ -38,6 +40,8 @@ interface ClearingTransitionData {
 export class CottageScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private playerController!: PlayerController;
+  private worldClock!: WorldClock;
+  private atmosphere!: AtmosphereOverlay;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
   private cottageExit!: Phaser.GameObjects.Rectangle;
@@ -273,6 +277,13 @@ export class CottageScene extends Phaser.Scene {
       0.12,
     );
 
+    this.worldClock = new WorldClock(this.game);
+
+    this.atmosphere = new AtmosphereOverlay(
+      this,
+      0x3a3048,
+    );
+
     this.add
       .text(
         24,
@@ -335,5 +346,17 @@ export class CottageScene extends Phaser.Scene {
   update() {
     this.playerController.update();
     this.player.setDepth(this.player.y);
+
+    const worldTime = this.worldClock.read();
+
+    const interiorDarkness = Phaser.Math.Clamp(
+      worldTime.darkness * 0.42,
+      0.02,
+      0.24,
+    );
+
+    this.atmosphere.setAlpha(
+      interiorDarkness,
+    );
   }
 }

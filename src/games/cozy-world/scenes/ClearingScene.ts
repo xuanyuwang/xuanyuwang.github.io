@@ -1,9 +1,9 @@
 import Phaser from "phaser";
+import { AtmosphereOverlay } from "../AtmosphereOverlay";
 import { PlayerController } from "../PlayerController";
 import { WorldClock } from "../WorldClock";
 import { addDebugPositionMarker } from "../debug";
 import {
-  ATMOSPHERE_DEPTH,
   CLEARING_RETURN_X,
   CLEARING_RETURN_Y,
   CLEARING_SCENE_KEY,
@@ -46,7 +46,7 @@ export class ClearingScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private playerController!: PlayerController;
   private worldClock!: WorldClock;
-  private atmosphere!: Phaser.GameObjects.Rectangle;
+  private atmosphere!: AtmosphereOverlay;
   private timeDebugText?: Phaser.GameObjects.Text;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
@@ -309,36 +309,9 @@ export class ClearingScene extends Phaser.Scene {
 
     this.worldClock = new WorldClock(this.game);
 
-    this.atmosphere = this.add
-      .rectangle(
-        0,
-        0,
-        1,
-        1,
-        0x263450,
-      )
-      .setOrigin(0)
-      .setScrollFactor(0)
-      .setDepth(ATMOSPHERE_DEPTH)
-      .setBlendMode(Phaser.BlendModes.MULTIPLY);
-
-    this.resizeAtmosphere();
-
-    this.scale.on(
-      Phaser.Scale.Events.RESIZE,
-      this.resizeAtmosphere,
+    this.atmosphere = new AtmosphereOverlay(
       this,
-    );
-
-    this.events.once(
-      Phaser.Scenes.Events.SHUTDOWN,
-      () => {
-        this.scale.off(
-          Phaser.Scale.Events.RESIZE,
-          this.resizeAtmosphere,
-          this,
-        );
-      },
+      0x263450,
     );
 
     if (DEBUG_PHYSICS) {
@@ -382,13 +355,6 @@ export class ClearingScene extends Phaser.Scene {
 
   private enterCottage() {
     this.scene.start(COTTAGE_SCENE_KEY);
-  }
-
-  private resizeAtmosphere() {
-    this.atmosphere.setDisplaySize(
-      this.scale.width,
-      this.scale.height,
-    );
   }
 
   private createStaticObstacle(
