@@ -4,8 +4,17 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 const categories = [
   {
     name: "主菜",
-    items: ["韩式辣年糕", "番茄炒蛋", "清蒸鱼", "白灼大虾", "鸡排饭", "爆炒小牛肉", "茄辣西",
-      "香煎三文鱼"
+    items: [
+      "韩式辣年糕",
+      "番茄炒蛋",
+      "清蒸鱼",
+      "白灼大虾",
+      "鸡排饭",
+      "爆炒小牛肉",
+      "茄辣西",
+      "香煎三文鱼",
+      "清炖牛肋排",
+      "清炖羊肉",
     ],
   },
   {
@@ -30,16 +39,19 @@ const categories = [
   },
   {
     name: "早餐",
-    items: ["grilled sourdough"]
+    items: ["grilled sourdough"],
   },
   {
     name: "零食",
     items: ["烤芝士玉米粒"],
-  }
+  },
 ];
 ---
 
-<BaseLayout title="家庭点餐 | Xuanyu Wang" description="Simple family menu and order page">
+<BaseLayout
+  title="家庭点餐 | Xuanyu Wang"
+  description="Simple family menu and order page"
+>
   <h1>家庭点餐</h1>
   <p class="meta">选择今天要吃的菜，调整数量后生成订单。</p>
 
@@ -50,14 +62,12 @@ const categories = [
           <section class="panel menu-category">
             <h2>{category.name}</h2>
             <div class="menu-items">
-              {
-                category.items.map((item) => (
-                  <label class="menu-item">
-                    <input type="checkbox" value={item} data-menu-item />
-                    <span>{item}</span>
-                  </label>
-                ))
-              }
+              {category.items.map((item) => (
+                <label class="menu-item">
+                  <input type="checkbox" value={item} data-menu-item />
+                  <span>{item}</span>
+                </label>
+              ))}
             </div>
           </section>
         ))
@@ -86,7 +96,9 @@ const categories = [
     <div data-order-summary></div>
     <div class="summary-actions" data-summary-actions hidden>
       <button type="button" data-share-image>分享图片</button>
-      <button type="button" class="secondary" data-download-image>下载图片</button>
+      <button type="button" class="secondary" data-download-image
+        >下载图片</button
+      >
     </div>
     <p class="meta" data-share-status></p>
   </section>
@@ -266,7 +278,9 @@ const categories = [
 
   <script>
     const app = document.querySelector("[data-order-app]");
-    const checkboxes = Array.from(document.querySelectorAll("[data-menu-item]"));
+    const checkboxes = Array.from(
+      document.querySelectorAll("[data-menu-item]"),
+    );
     const cartList = document.querySelector("[data-cart-list]");
     const progress = document.querySelector("[data-progress]");
     const summaryPanel = document.querySelector("[data-summary-panel]");
@@ -299,7 +313,10 @@ const categories = [
       shareStatus.textContent = "";
     };
 
-    const getOrderLines = () => Array.from(cart.entries()).map(([item, quantity]) => `${item} x ${quantity}`);
+    const getOrderLines = () =>
+      Array.from(cart.entries()).map(
+        ([item, quantity]) => `${item} x ${quantity}`,
+      );
 
     const createOrderImageBlob = () =>
       new Promise((resolve) => {
@@ -425,7 +442,9 @@ const categories = [
       } else {
         orderSummary.innerHTML = `
           <ul>
-            ${getOrderLines().map((line) => `<li>${line}</li>`).join("")}
+            ${getOrderLines()
+              .map((line) => `<li>${line}</li>`)
+              .join("")}
           </ul>
         `;
         summaryActions.hidden = false;
