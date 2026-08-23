@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { AtmosphereOverlay } from "../AtmosphereOverlay";
 import { PlayerController } from "../PlayerController";
+import { RainSystem } from "../RainSystem";
 import { WorldClock } from "../WorldClock";
 import { addDebugPositionMarker } from "../debug";
 import {
@@ -47,6 +48,7 @@ export class ClearingScene extends Phaser.Scene {
   private playerController!: PlayerController;
   private worldClock!: WorldClock;
   private atmosphere!: AtmosphereOverlay;
+  private rainSystem!: RainSystem;
   private timeDebugText?: Phaser.GameObjects.Text;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
@@ -313,6 +315,8 @@ export class ClearingScene extends Phaser.Scene {
       this,
       0x263450,
     );
+
+    this.rainSystem = new RainSystem(this);
 
     if (DEBUG_PHYSICS) {
       this.timeDebugText = this.add

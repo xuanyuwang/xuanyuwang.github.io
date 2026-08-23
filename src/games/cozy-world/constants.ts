@@ -36,6 +36,7 @@ export const COTTAGE_TABLE_ASSET_PATH =
 
 export const DEBUG_PHYSICS = import.meta.env.DEV;
 export const ATMOSPHERE_DEPTH = 1500;
+export const WEATHER_DEPTH = 1600;
 export const UI_DEPTH = 2000;
 
 export const WORLD_WIDTH = 1200;
