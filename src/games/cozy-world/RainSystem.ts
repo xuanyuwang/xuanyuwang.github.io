@@ -11,6 +11,7 @@ export class RainSystem {
   private scene: Phaser.Scene;
   private spawnArea: Phaser.Geom.Rectangle;
   private emitter: Phaser.GameObjects.Particles.ParticleEmitter;
+  private isRaining = false;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -47,6 +48,7 @@ export class RainSystem {
         0,
         RAIN_TEXTURE_KEY,
         {
+          emitting: false,
           emitZone: emissionZone,
           lifespan: {
             min: 900,
@@ -88,6 +90,20 @@ export class RainSystem {
       this.handleSceneShutdown,
       this,
     );
+  }
+
+  setRaining(isRaining: boolean) {
+    if (isRaining === this.isRaining) {
+      return;
+    }
+
+    this.isRaining = isRaining;
+
+    if (isRaining) {
+      this.emitter.start();
+    } else {
+      this.emitter.stop();
+    }
   }
 
   private createRainTexture() {

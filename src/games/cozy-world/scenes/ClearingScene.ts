@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { AtmosphereOverlay } from "../AtmosphereOverlay";
 import { PlayerController } from "../PlayerController";
 import { RainSystem } from "../RainSystem";
+import { WeatherClock } from "../WeatherClock";
 import { WorldClock } from "../WorldClock";
 import { addDebugPositionMarker } from "../debug";
 import {
@@ -47,6 +48,7 @@ export class ClearingScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private playerController!: PlayerController;
   private worldClock!: WorldClock;
+  private weatherClock!: WeatherClock;
   private atmosphere!: AtmosphereOverlay;
   private rainSystem!: RainSystem;
   private timeDebugText?: Phaser.GameObjects.Text;
@@ -310,6 +312,7 @@ export class ClearingScene extends Phaser.Scene {
     );
 
     this.worldClock = new WorldClock(this.game);
+    this.weatherClock = new WeatherClock(this.game);
 
     this.atmosphere = new AtmosphereOverlay(
       this,
@@ -386,13 +389,21 @@ export class ClearingScene extends Phaser.Scene {
     this.player.setDepth(this.player.y);
 
     const worldTime = this.worldClock.read();
+    const weather = this.weatherClock.read();
 
     this.atmosphere.setAlpha(
       worldTime.darkness,
     );
 
+    this.rainSystem.setRaining(
+      weather.isRaining,
+    );
+
     this.timeDebugText?.setText(
-      `${worldTime.label} · ${Math.round(worldTime.phase * 100)}%`,
+      [
+        `${worldTime.label} · ${Math.round(worldTime.phase * 100)}%`,
+        `${weather.label} · ${Math.round(weather.phase * 100)}%`,
+      ].join("\n"),
     );
   }
 }
