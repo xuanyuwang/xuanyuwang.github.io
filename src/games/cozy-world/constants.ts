@@ -34,6 +34,12 @@ export const COTTAGE_TABLE_TEXTURE_KEY =
 export const COTTAGE_TABLE_ASSET_PATH =
   "/cozy-world/scenery/cottage-table.svg";
 
+export const FOREST_AMBIENCE_AUDIO_KEY =
+  "cozy-world-forest-ambience";
+
+export const FOREST_AMBIENCE_AUDIO_PATH =
+  "/cozy-world/audio/forest-ambience.mp3";
+
 export const DEBUG_PHYSICS = import.meta.env.DEV;
 export const ATMOSPHERE_DEPTH = 1500;
 export const WEATHER_DEPTH = 1600;

@@ -19,6 +19,8 @@ import {
   COTTAGE_X,
   COTTAGE_Y,
   DEBUG_PHYSICS,
+  FOREST_AMBIENCE_AUDIO_KEY,
+  FOREST_AMBIENCE_AUDIO_PATH,
   LEFT_TREE_BASE_Y,
   LEFT_TREE_TRUNK_Y,
   LEFT_TREE_X,
@@ -51,6 +53,8 @@ export class ClearingScene extends Phaser.Scene {
   private weatherClock!: WeatherClock;
   private atmosphere!: AtmosphereOverlay;
   private rainSystem!: RainSystem;
+  private forestAmbience!: Phaser.Sound.BaseSound;
+  private audioStarted = false;
   private timeDebugText?: Phaser.GameObjects.Text;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
@@ -91,6 +95,13 @@ export class ClearingScene extends Phaser.Scene {
           width: 112,
           height: 170,
         },
+      );
+    }
+
+    if (!this.cache.audio.exists(FOREST_AMBIENCE_AUDIO_KEY)) {
+      this.load.audio(
+        FOREST_AMBIENCE_AUDIO_KEY,
+        FOREST_AMBIENCE_AUDIO_PATH,
       );
     }
   }
@@ -321,6 +332,36 @@ export class ClearingScene extends Phaser.Scene {
 
     this.rainSystem = new RainSystem(this);
 
+    this.forestAmbience = this.sound.add(
+      FOREST_AMBIENCE_AUDIO_KEY,
+      {
+        loop: true,
+        volume: 0.22,
+      },
+    );
+
+    // A Phaser scene instance is reused when the player returns from the
+    // cottage, so reset this scene-run state before registering new listeners.
+    this.audioStarted = false;
+
+    this.input.once(
+      Phaser.Input.Events.POINTER_DOWN,
+      this.startAmbientAudio,
+      this,
+    );
+
+    this.input.keyboard?.once(
+      "keydown",
+      this.startAmbientAudio,
+      this,
+    );
+
+    this.events.once(
+      Phaser.Scenes.Events.SHUTDOWN,
+      this.stopAmbientAudio,
+      this,
+    );
+
     if (DEBUG_PHYSICS) {
       this.timeDebugText = this.add
         .text(
@@ -362,6 +403,20 @@ export class ClearingScene extends Phaser.Scene {
 
   private enterCottage() {
     this.scene.start(COTTAGE_SCENE_KEY);
+  }
+
+  private startAmbientAudio() {
+    if (this.audioStarted) {
+      return;
+    }
+
+    this.audioStarted = true;
+    this.forestAmbience.play();
+  }
+
+  private stopAmbientAudio() {
+    this.forestAmbience.stop();
+    this.forestAmbience.destroy();
   }
 
   private createStaticObstacle(
