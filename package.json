@@ -14,7 +14,7 @@
     "astro": "ASTRO_TELEMETRY_DISABLED=1 astro"
   },
   "dependencies": {
-    "astro": "^6.0.4",
+    "astro": "^7.2.9",
     "phaser": "^4.2.1"
   },
   "devDependencies": {
