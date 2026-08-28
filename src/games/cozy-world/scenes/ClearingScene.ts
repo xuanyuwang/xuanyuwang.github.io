@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { AtmosphereOverlay } from "../AtmosphereOverlay";
+import { AudioSettings } from "../AudioSettings";
 import { PlayerController } from "../PlayerController";
 import { RainSystem } from "../RainSystem";
 import { WeatherClock } from "../WeatherClock";
@@ -53,6 +54,8 @@ export class ClearingScene extends Phaser.Scene {
   private weatherClock!: WeatherClock;
   private atmosphere!: AtmosphereOverlay;
   private rainSystem!: RainSystem;
+  private audioSettings!: AudioSettings;
+  private audioButton!: Phaser.GameObjects.Text;
   private forestAmbience!: Phaser.Sound.BaseSound;
   private audioStarted = false;
   private timeDebugText?: Phaser.GameObjects.Text;
@@ -332,11 +335,13 @@ export class ClearingScene extends Phaser.Scene {
 
     this.rainSystem = new RainSystem(this);
 
+    this.audioSettings = new AudioSettings(this.game);
+
     this.forestAmbience = this.sound.add(
       FOREST_AMBIENCE_AUDIO_KEY,
       {
         loop: true,
-        volume: 0.22,
+        volume: 0.92,
       },
     );
 
@@ -344,17 +349,58 @@ export class ClearingScene extends Phaser.Scene {
     // cottage, so reset this scene-run state before registering new listeners.
     this.audioStarted = false;
 
-    this.input.once(
+    this.audioButton = this.add
+      .text(
+        0,
+        0,
+        "",
+        {
+          backgroundColor: "#2f261fcc",
+          color: "#fff2d2",
+          fontFamily: "Georgia, serif",
+          fontSize: "15px",
+          padding: {
+            x: 10,
+            y: 7,
+          },
+        },
+      )
+      .setOrigin(
+        1,
+        0,
+      )
+      .setScrollFactor(0)
+      .setDepth(UI_DEPTH)
+      .setInteractive({
+        useHandCursor: true,
+      });
+
+    this.audioButton.on(
       Phaser.Input.Events.POINTER_DOWN,
+      this.toggleAmbientAudio,
+      this,
+    );
+
+    this.updateAudioButton();
+    this.positionAudioButton();
+
+    this.scale.on(
+      Phaser.Scale.Events.RESIZE,
+      this.positionAudioButton,
+      this,
+    );
+
+    // Phaser resumes the browser's AudioContext asynchronously after the first
+    // user gesture. Wait for confirmation instead of racing that unlock.
+    this.sound.once(
+      Phaser.Sound.Events.UNLOCKED,
       this.startAmbientAudio,
       this,
     );
 
-    this.input.keyboard?.once(
-      "keydown",
-      this.startAmbientAudio,
-      this,
-    );
+    if (!this.sound.locked) {
+      this.startAmbientAudio();
+    }
 
     this.events.once(
       Phaser.Scenes.Events.SHUTDOWN,
@@ -406,17 +452,61 @@ export class ClearingScene extends Phaser.Scene {
   }
 
   private startAmbientAudio() {
-    if (this.audioStarted) {
+    if (
+      this.audioStarted ||
+      this.sound.locked ||
+      !this.audioSettings.isEnabled()
+    ) {
       return;
     }
 
-    this.audioStarted = true;
-    this.forestAmbience.play();
+    this.audioStarted = this.forestAmbience.play();
+  }
+
+  private toggleAmbientAudio() {
+    const isEnabled = this.audioSettings.toggle();
+
+    if (isEnabled) {
+      this.startAmbientAudio();
+    } else {
+      this.forestAmbience.stop();
+      this.audioStarted = false;
+    }
+
+    this.updateAudioButton();
+  }
+
+  private updateAudioButton() {
+    const label = this.audioSettings.isEnabled()
+      ? "Sound: On"
+      : "Sound: Off";
+
+    this.audioButton.setText(label);
+  }
+
+  private positionAudioButton() {
+    this.audioButton.setPosition(
+      this.scale.width - 18,
+      18,
+    );
   }
 
   private stopAmbientAudio() {
+    this.scale.off(
+      Phaser.Scale.Events.RESIZE,
+      this.positionAudioButton,
+      this,
+    );
+
+    this.sound.off(
+      Phaser.Sound.Events.UNLOCKED,
+      this.startAmbientAudio,
+      this,
+    );
+
     this.forestAmbience.stop();
     this.forestAmbience.destroy();
+    this.audioStarted = false;
   }
 
   private createStaticObstacle(
@@ -458,7 +548,18 @@ export class ClearingScene extends Phaser.Scene {
       [
         `${worldTime.label} · ${Math.round(worldTime.phase * 100)}%`,
         `${weather.label} · ${Math.round(weather.phase * 100)}%`,
+        `Audio · ${this.getAudioDebugLabel()}`,
       ].join("\n"),
     );
+  }
+
+  private getAudioDebugLabel(): string {
+    if (this.sound.locked) {
+      return "Locked";
+    }
+
+    return this.audioStarted
+      ? "Playing"
+      : "Stopped";
   }
 }
