@@ -61,6 +61,12 @@ Keyboard and touch controls produce the same abstract movement intent.
 Game logic should not contain separate movement implementations for keyboard
 and touch input.
 
+Contextual actions use a shared control that owns the keyboard key, responsive
+on-screen button, and scene-shutdown cleanup. Each scene still decides when an
+action is available and what activating it does. This keeps movement and world
+interaction as separate responsibilities while giving keyboard and touch users
+the same action path.
+
 ## Collision strategy
 
 The controllable player has a dynamic Arcade Physics body. Scenery that should

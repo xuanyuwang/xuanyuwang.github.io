@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { AtmosphereOverlay } from "../AtmosphereOverlay";
+import { ContextActionControl } from "../ContextActionControl";
 import { PlayerController } from "../PlayerController";
 import { WorldClock } from "../WorldClock";
 import { addDebugPositionMarker } from "../debug";
@@ -61,9 +62,7 @@ export class CottageScene extends Phaser.Scene {
   private lampBulb!: Phaser.GameObjects.Arc;
   private lampGlowInner!: Phaser.GameObjects.Arc;
   private lampGlowOuter!: Phaser.GameObjects.Arc;
-  private interactKey!: Phaser.Input.Keyboard.Key;
-  private interactionButton!: Phaser.GameObjects.Text;
-  private canInteractWithLamp = false;
+  private lampAction!: ContextActionControl;
 
   private obstacles!: Phaser.Physics.Arcade.StaticGroup;
   private cottageExit!: Phaser.GameObjects.Rectangle;
@@ -398,61 +397,10 @@ export class CottageScene extends Phaser.Scene {
       this.player,
     );
 
-    const keyboard = this.input.keyboard;
-
-    if (!keyboard) {
-      throw new Error("Keyboard input is unavailable");
-    }
-
-    this.interactKey = keyboard.addKey(
-      Phaser.Input.Keyboard.KeyCodes.E,
-    );
-
-    this.interactionButton = this.add
-      .text(
-        0,
-        0,
-        "E · Toggle lamp",
-        {
-          backgroundColor: "#2f261fee",
-          color: "#fff2d2",
-          fontFamily: "Georgia, serif",
-          fontSize: "16px",
-          padding: {
-            x: 12,
-            y: 9,
-          },
-        },
-      )
-      .setOrigin(
-        1,
-        1,
-      )
-      .setScrollFactor(0)
-      .setDepth(UI_DEPTH)
-      .setInteractive({
-        useHandCursor: true,
-      })
-      .setVisible(false);
-
-    this.interactionButton.on(
-      Phaser.Input.Events.POINTER_DOWN,
-      this.handleLampButtonPressed,
+    this.lampAction = new ContextActionControl(
       this,
-    );
-
-    this.positionInteractionButton();
-
-    this.scale.on(
-      Phaser.Scale.Events.RESIZE,
-      this.positionInteractionButton,
-      this,
-    );
-
-    this.events.once(
-      Phaser.Scenes.Events.SHUTDOWN,
-      this.handleSceneShutdown,
-      this,
+      "Toggle lamp",
+      () => this.toggleLamp(),
     );
 
     this.cameras.main.startFollow(
@@ -536,19 +484,13 @@ export class CottageScene extends Phaser.Scene {
         LAMP_INTERACTION_Y,
       );
 
-    this.canInteractWithLamp =
+    const canInteractWithLamp =
       distanceToLamp <= LAMP_INTERACTION_RANGE;
 
-    this.interactionButton.setVisible(
-      this.canInteractWithLamp,
+    this.lampAction.setAvailable(
+      canInteractWithLamp,
     );
-
-    if (
-      this.canInteractWithLamp &&
-      Phaser.Input.Keyboard.JustDown(this.interactKey)
-    ) {
-      this.toggleLamp();
-    }
+    this.lampAction.update();
   }
 
   private toggleLamp() {
@@ -561,29 +503,6 @@ export class CottageScene extends Phaser.Scene {
     );
 
     this.updateLampAppearance();
-  }
-
-  private handleLampButtonPressed() {
-    if (!this.canInteractWithLamp) {
-      return;
-    }
-
-    this.toggleLamp();
-  }
-
-  private positionInteractionButton() {
-    this.interactionButton.setPosition(
-      this.scale.width - 18,
-      this.scale.height - 18,
-    );
-  }
-
-  private handleSceneShutdown() {
-    this.scale.off(
-      Phaser.Scale.Events.RESIZE,
-      this.positionInteractionButton,
-      this,
-    );
   }
 
   private createStaticObstacle(

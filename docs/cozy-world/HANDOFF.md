@@ -1,6 +1,6 @@
 # Cozy World handoff
 
-Last updated: 2026-08-19
+Last updated: 2026-09-01
 
 This document is the live starting point for a new contributor or AI tool.
 Update it at the end of each meaningful milestone.
@@ -8,17 +8,16 @@ Update it at the end of each meaningful milestone.
 ## Current state
 
 The game is integrated into the existing Astro site at `/cozy-world/`. The
-active development branch at the time of this update is
-`feature/cozy-world-player`.
+active development branch is `main`.
 
 The current implementation:
 
 - Loads Phaser from a browser-side TypeScript module.
 - Mounts one Phaser canvas inside the Astro page.
-- Creates one `clearing` scene in a fixed 1200 by 800 world.
+- Provides an outdoor clearing and a separate cottage interior scene.
 - Uses a responsive `RESIZE` canvas for phone and laptop screens.
-- Draws the clearing, cottage, trees, player, and development labels with
-  primitive Phaser shapes.
+- Uses SVG art for the player and major scenery, with primitive Phaser shapes
+  for the remaining foundation graphics.
 - Moves the player with WASD, arrow keys, or an on-screen touch joystick.
 - Converts keyboard and touch input into one shared movement intent.
 - Normalizes diagonal movement and gives keyboard input priority when both
@@ -29,40 +28,33 @@ The current implementation:
   collision.
 - Keeps tree colliders around the lower trunks so the player can move beneath
   the canopies.
-
-The collision lesson is implemented locally but not yet committed. Its debug
-visuals are still enabled in `src/games/cozy-world/main.ts`:
-
-- `DEBUG_COLLIDERS` is `true`, so the custom obstacle rectangles are visible.
-- Arcade Physics `debug` is `true`, so Phaser also draws physics outlines.
-
-Set both values to `false` after collision behavior has been inspected and
-before committing the finished lesson.
+- Supports scene transitions between the clearing and cottage without an
+  immediate return-loop at either doorway.
+- Shares a world clock, day-to-night atmosphere, changing rain, and outdoor
+  forest ambience across the experience.
+- Provides an in-game audio control and waits for the browser to unlock audio
+  before starting ambience.
+- Lets the player toggle a cottage lamp using either E or a contextual
+  on-screen button.
+- Uses a reusable contextual-action control for keyboard input, touch input,
+  responsive positioning, and scene cleanup.
 
 ## What has been validated
 
-On 2026-08-19, with the collision changes present:
+On 2026-09-01, after extracting the contextual-action control:
 
 - `git diff --check` passes.
 - `npx tsc --noEmit` passes.
 - `npm run build` succeeds.
 - Astro generates `/cozy-world/index.html`.
 - The game mounts one canvas without browser console warnings or errors.
-- At a 1440 by 900 browser viewport, the canvas fits its container and the page
-  has no horizontal overflow.
-- At a 390 by 844 browser viewport, the canvas fits its container and the page
-  has no horizontal overflow.
+- At a 1440 by 900 browser viewport, the lamp action button appears when the
+  player approaches the lamp and toggles the lamp glow when clicked.
+- At a 390 by 844 browser viewport, the joystick and contextual action button
+  remain visible, correctly positioned, and do not overlap.
 
 The production build reports a large JavaScript chunk warning from bundling
 Phaser. This is expected and is not a blocker for the current phase.
-
-Collision feel still requires direct play testing. Before committing, verify
-with both keyboard and touch controls that:
-
-1. The player cannot cross the cottage or lower tree trunks.
-2. The player can move beneath the tree canopies.
-3. The player slides predictably along obstacle edges and corners.
-4. World-bound collision still works.
 
 ## Key decisions
 
@@ -72,9 +64,10 @@ with both keyboard and touch controls that:
 - Visible scenery and invisible collision geometry are separate objects.
 - Static scenery uses simple Arcade Physics bodies until the world demonstrates
   a need for more detailed geometry.
-- Primitive graphics remain intentional until movement, collisions, and scene
-  transitions are stable.
-- Depth sorting is deferred until visual assets are introduced.
+- Primitive graphics and SVG art coexist while gameplay remains the priority.
+- Player and scenery depth use their world Y positions for top-down occlusion.
+- Contextual interactions share input and responsive UI behavior without
+  moving scene-specific availability or effects into a general game system.
 - v0.1 has no local or cloud saving; refreshing starts a fresh session.
 - GitHub Pages is the v0.1 host, so runtime behavior remains static and
   browser-based.
@@ -83,23 +76,10 @@ See `ARCHITECTURE.md` for the technical model behind these decisions.
 
 ## Next milestone
 
-Lesson 6 makes the cottage enterable and introduces a genuinely different game
-space.
-
-The lesson should cover:
-
-1. The difference between a collider, which blocks movement, and an overlap,
-   which detects contact without physically separating objects.
-2. Replacing the cottage's single obstacle with geometry that leaves a usable
-   doorway or threshold.
-3. Creating a separate `CottageScene` for the one-room interior.
-4. Entering through an overlap zone or explicit interaction near the door.
-5. Passing a sensible spawn position when moving between scenes.
-6. Returning to the clearing without immediately retriggering the entrance.
-7. Reusing the existing keyboard and touch movement behavior in both scenes.
-
-Keep the interior made from primitive shapes. Do not introduce final art,
-depth sorting, saving, or a generalized scene framework in this lesson.
+Lesson 15A adds one fixed outdoor planting spot. It should reuse the contextual
+action control introduced after the lamp lesson, teach the difference between
+an available interaction and its resulting world-state change, and keep the
+planted tree in memory only for the current browser session.
 
 ## Remaining lesson order
 
