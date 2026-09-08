@@ -1,6 +1,6 @@
 # Cozy World handoff
 
-Last updated: 2026-09-01
+Last updated: 2026-09-08
 
 This document is the live starting point for a new contributor or AI tool.
 Update it at the end of each meaningful milestone.
@@ -41,17 +41,20 @@ The current implementation:
 
 ## What has been validated
 
-On 2026-09-01, after extracting the contextual-action control:
+On 2026-09-08, after the final v0.1 polish:
 
 - `git diff --check` passes.
 - `npx tsc --noEmit` passes.
 - `npm run build` succeeds.
 - Astro generates `/cozy-world/index.html`.
+- The Apps-page entry navigates to `/cozy-world/` successfully.
 - The game mounts one canvas without browser console warnings or errors.
-- At a 1440 by 900 browser viewport, the lamp action button appears when the
-  player approaches the lamp and toggles the lamp glow when clicked.
-- At a 390 by 844 browser viewport, the joystick and contextual action button
-  remain visible, correctly positioned, and do not overlap.
+- The production build hides physics bodies, position markers, and other
+  development-only visuals.
+- At 1440 by 900 and 390 by 844 browser viewports, the canvas fits its
+  container and the page has no horizontal overflow.
+- At the phone viewport, the sound control and touch joystick remain visible
+  and correctly positioned.
 
 The production build reports a large JavaScript chunk warning from bundling
 Phaser. This is expected and is not a blocker for the current phase.
@@ -76,10 +79,10 @@ See `ARCHITECTURE.md` for the technical model behind these decisions.
 
 ## Next milestone
 
-Lesson 15A adds one fixed outdoor planting spot. It should reuse the contextual
-action control introduced after the lamp lesson, teach the difference between
-an available interaction and its resulting world-state change, and keep the
-planted tree in memory only for the current browser session.
+Cozy World v0.1 is feature-complete. Lesson 15 tree planting was intentionally
+removed from scope, and Lessons 16 and 17 cover responsive testing and final
+release verification. Future work should begin with a separately chosen v0.2
+feature rather than automatically continuing the original roadmap.
 
 ## Remaining lesson order
 
@@ -95,7 +98,7 @@ The remaining roadmap is mirrored by tickets in the Linear project
 7. Lesson 12 — Add gentle rain weather
 8. Lesson 13 — Add ambient sound
 9. Lesson 14 — Add a lamp or fireplace interaction
-10. Lesson 15 — Let the player plant a tree
+10. Lesson 15 — Let the player plant a tree (intentionally skipped)
 11. Lesson 16 — Test performance and responsive behavior
 12. Lesson 17 — Polish and verify the v0.1 playable loop
 

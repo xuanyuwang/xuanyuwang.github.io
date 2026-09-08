@@ -309,7 +309,7 @@ export class ClearingScene extends Phaser.Scene {
 
     // Draw supporting screen-level text below the title.
     this.add
-      .text(25, 58, "The clearing is taking shape.", {
+      .text(25, 58, "A quiet place among the autumn trees.", {
         color: "#f5dfbd",
         fontFamily: "Georgia, serif",
         fontSize: "16px",

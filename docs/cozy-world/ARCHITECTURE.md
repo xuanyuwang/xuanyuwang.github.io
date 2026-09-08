@@ -50,6 +50,7 @@ visible.
 ## Current scenes
 
 - `clearing`: the initial outdoor game world
+- `cottage`: the one-room cottage interior
 
 New scenes should only be introduced when the player can visit a genuinely
 different game space or mode.
@@ -86,13 +87,13 @@ Physics debug display should be disabled for normal play.
 
 ## Asset strategy
 
-Primitive Phaser shapes are used during the foundation phase. Art assets will
-be introduced after rendering, input, and scene structure are working.
+SVG assets represent the player and major scenery. Primitive Phaser shapes
+remain useful for simple environmental details, lighting, weather, and debug
+geometry.
 
 This keeps visual asset problems separate from game-system problems.
 
 ## Persistence
 
 Cozy World v0.1 does not save game state locally or remotely. Runtime changes,
-including planted trees and lamp or fireplace state, reset when the page is
-refreshed.
+including the cottage lamp state, reset when the page is refreshed.

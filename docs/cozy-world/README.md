@@ -9,7 +9,7 @@ For the current implementation status and the next development milestone, see
 Cozy World is a tiny, peaceful browser game set in an autumn clearing.
 
 The player can walk around a cottage, enjoy changing weather and light,
-enter the cottage, interact with a lamp or fireplace, and plant a tree.
+enter the cottage, and interact with a lamp.
 
 The game has no combat, failure state, monetization, or pressure.
 
@@ -22,7 +22,6 @@ The game has no combat, failure state, monetization, or pressure.
 - Day-to-night cycle
 - Rain
 - One lamp or fireplace interaction
-- Tree planting
 
 ## Explicitly out of scope
 
