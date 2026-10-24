@@ -112,26 +112,7 @@ export class ClearingScene extends Phaser.Scene {
   create(data: ClearingSceneData = {}) {
     this.obstacles = this.physics.add.staticGroup();
 
-    // Fill the entire game world with the lighter grass color.
-    // This is the base layer behind every other shape.
-    this.add.rectangle(
-      WORLD_WIDTH / 2,
-      WORLD_HEIGHT / 2,
-      WORLD_WIDTH,
-      WORLD_HEIGHT,
-      0x667a50,
-    );
-
-    // Draw a darker clearing or path below the cottage.
-    // Its position is derived from the cottage so the composition stays together
-    // if the cottage is moved later.
-    this.add.rectangle(
-      COTTAGE_X,
-      COTTAGE_Y + 190,
-      220,
-      280,
-      0x536b45,
-    );
+    this.createMorningValleyBackdrop();
 
     // Draw the cottage as one composed texture. Its position refers to the
     // center of the bottom edge where the building meets the ground.
@@ -449,6 +430,122 @@ export class ClearingScene extends Phaser.Scene {
 
   private enterCottage() {
     this.scene.start(COTTAGE_SCENE_KEY);
+  }
+
+  private createMorningValleyBackdrop() {
+    const backdrop = this.add.graphics().setDepth(-10);
+
+    // The fixed canvas color makes open sky visible above the distant ridges.
+    backdrop.fillStyle(0xf2c9ad, 1);
+    backdrop.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+
+    // Broad overlapping silhouettes establish depth without competing with
+    // the cottage and player for attention.
+    backdrop.fillStyle(0xb7a2bd, 1);
+    backdrop.fillPoints([
+      new Phaser.Math.Vector2(0, 285),
+      new Phaser.Math.Vector2(160, 205),
+      new Phaser.Math.Vector2(330, 272),
+      new Phaser.Math.Vector2(520, 188),
+      new Phaser.Math.Vector2(705, 265),
+      new Phaser.Math.Vector2(900, 195),
+      new Phaser.Math.Vector2(1080, 250),
+      new Phaser.Math.Vector2(WORLD_WIDTH, 210),
+      new Phaser.Math.Vector2(WORLD_WIDTH, WORLD_HEIGHT),
+      new Phaser.Math.Vector2(0, WORLD_HEIGHT),
+    ], true);
+
+    backdrop.fillStyle(0x9b829c, 1);
+    backdrop.fillPoints([
+      new Phaser.Math.Vector2(0, 360),
+      new Phaser.Math.Vector2(175, 300),
+      new Phaser.Math.Vector2(345, 342),
+      new Phaser.Math.Vector2(535, 280),
+      new Phaser.Math.Vector2(720, 345),
+      new Phaser.Math.Vector2(930, 275),
+      new Phaser.Math.Vector2(WORLD_WIDTH, 330),
+      new Phaser.Math.Vector2(WORLD_WIDTH, WORLD_HEIGHT),
+      new Phaser.Math.Vector2(0, WORLD_HEIGHT),
+    ], true);
+
+    // The foreground rises toward the cottage, making it feel perched above
+    // the valley floor. Keep this color related to the existing clearing path.
+    backdrop.fillStyle(0x667a50, 1);
+    backdrop.fillPoints([
+      new Phaser.Math.Vector2(0, 535),
+      new Phaser.Math.Vector2(180, 480),
+      new Phaser.Math.Vector2(370, 505),
+      new Phaser.Math.Vector2(560, 458),
+      new Phaser.Math.Vector2(760, 500),
+      new Phaser.Math.Vector2(970, 455),
+      new Phaser.Math.Vector2(WORLD_WIDTH, 490),
+      new Phaser.Math.Vector2(WORLD_WIDTH, WORLD_HEIGHT),
+      new Phaser.Math.Vector2(0, WORLD_HEIGHT),
+    ], true);
+
+    // A narrow path descends from the cottage and bends across the slope.
+    // Unlike the former rectangular clearing, it follows the hill silhouette.
+    backdrop.fillStyle(0x8b7350, 1);
+    backdrop.fillPoints([
+      new Phaser.Math.Vector2(COTTAGE_X - 30, COTTAGE_BASE_Y + 8),
+      new Phaser.Math.Vector2(COTTAGE_X + 30, COTTAGE_BASE_Y + 8),
+      new Phaser.Math.Vector2(COTTAGE_X + 55, 530),
+      new Phaser.Math.Vector2(COTTAGE_X + 34, 575),
+      new Phaser.Math.Vector2(COTTAGE_X + 90, 630),
+      new Phaser.Math.Vector2(COTTAGE_X + 135, WORLD_HEIGHT),
+      new Phaser.Math.Vector2(COTTAGE_X - 105, WORLD_HEIGHT),
+      new Phaser.Math.Vector2(COTTAGE_X - 70, 640),
+      new Phaser.Math.Vector2(COTTAGE_X - 20, 585),
+      new Phaser.Math.Vector2(COTTAGE_X - 44, 535),
+    ], true);
+
+    this.addValleyTree(78, 477, 0x9c4f32, 1.05);
+    this.addValleyTree(250, 472, 0xc18b3e, 0.82);
+    this.addValleyTree(1012, 450, 0x9c4f32, 1.08);
+    this.addValleyTree(1132, 481, 0xc18b3e, 0.88);
+
+    // A narrow translucent ribbon softens the valley floor without obscuring
+    // the colored hill layers.
+    const mist = this.add.graphics().setDepth(-9);
+    mist.fillStyle(0xf8e8df, 0.24);
+    mist.fillPoints([
+      new Phaser.Math.Vector2(0, 396),
+      new Phaser.Math.Vector2(180, 382),
+      new Phaser.Math.Vector2(360, 402),
+      new Phaser.Math.Vector2(560, 386),
+      new Phaser.Math.Vector2(760, 405),
+      new Phaser.Math.Vector2(960, 385),
+      new Phaser.Math.Vector2(WORLD_WIDTH, 398),
+      new Phaser.Math.Vector2(WORLD_WIDTH, 420),
+      new Phaser.Math.Vector2(760, 428),
+      new Phaser.Math.Vector2(560, 414),
+      new Phaser.Math.Vector2(360, 430),
+      new Phaser.Math.Vector2(180, 410),
+      new Phaser.Math.Vector2(0, 426),
+    ], true);
+  }
+
+  private addValleyTree(
+    x: number,
+    groundY: number,
+    color: number,
+    scale: number,
+  ) {
+    const tree = this.add.graphics().setDepth(-8);
+    const trunkWidth = 12 * scale;
+    const trunkHeight = 34 * scale;
+
+    tree.fillStyle(0x68402f, 1);
+    tree.fillRect(
+      x - trunkWidth / 2,
+      groundY - trunkHeight,
+      trunkWidth,
+      trunkHeight,
+    );
+    tree.fillStyle(color, 1);
+    tree.fillCircle(x, groundY - 58 * scale, 34 * scale);
+    tree.fillCircle(x - 23 * scale, groundY - 43 * scale, 25 * scale);
+    tree.fillCircle(x + 22 * scale, groundY - 42 * scale, 27 * scale);
   }
 
   private startAmbientAudio() {

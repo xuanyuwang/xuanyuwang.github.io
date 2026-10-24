@@ -1,6 +1,6 @@
 # Cozy World handoff
 
-Last updated: 2026-09-08
+Last updated: 2026-10-12
 
 This document is the live starting point for a new contributor or AI tool.
 Update it at the end of each meaningful milestone.
@@ -18,6 +18,9 @@ The current implementation:
 - Uses a responsive `RESIZE` canvas for phone and laptop screens.
 - Uses SVG art for the player and major scenery, with primitive Phaser shapes
   for the remaining foundation graphics.
+- Opens on a static morning-valley backdrop with a pale peach sky, overlapping
+  lavender hills, russet and gold foreground trees, a high cottage slope, and
+  a translucent ribbon of valley mist.
 - Moves the player with WASD, arrow keys, or an on-screen touch joystick.
 - Converts keyboard and touch input into one shared movement intent.
 - Normalizes diagonal movement and gives keyboard input priority when both
@@ -79,10 +82,10 @@ See `ARCHITECTURE.md` for the technical model behind these decisions.
 
 ## Next milestone
 
-Cozy World v0.1 is feature-complete. Lesson 15 tree planting was intentionally
-removed from scope, and Lessons 16 and 17 cover responsive testing and final
-release verification. Future work should begin with a separately chosen v0.2
-feature rather than automatically continuing the original roadmap.
+Cozy World v0.1 is feature-complete. The morning-valley backdrop is a visual
+polish milestone; the next feature should be chosen separately as v0.2 work.
+Lesson 15 tree planting was intentionally removed from scope, and Lessons 16
+and 17 cover responsive testing and final release verification.
 
 ## Remaining lesson order
 
